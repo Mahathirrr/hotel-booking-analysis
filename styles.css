@@ -1,0 +1,251 @@
+/* Base styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+/* Navigation */
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eaeaea;
+}
+
+.nav-title {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #2C7BB6;
+    margin: 0;
+}
+
+.nav-links {
+    display: flex;
+    gap: 15px;
+}
+
+a {
+    color: #2C7BB6;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+a:hover {
+    color: #D7191C;
+    text-decoration: underline;
+}
+
+/* Chart container */
+#chart {
+    width: 100%;
+    height: auto;
+    min-height: 600px;
+    margin: 20px 0;
+    position: relative;
+}
+
+/* SVG Elements */
+svg {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: white;
+    overflow: visible;
+}
+
+/* Axes */
+.axis path,
+.axis line {
+    stroke: #ccc;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+}
+
+.axis text {
+    fill: #666;
+    font-size: 12px;
+}
+
+/* Grid */
+.grid line {
+    stroke: #e0e0e0;
+    stroke-opacity: 0.3;
+    shape-rendering: crispEdges;
+}
+
+.grid path {
+    stroke-width: 0;
+}
+
+/* Bars */
+.bar {
+    stroke: white;
+    stroke-width: 1;
+}
+
+/* Lines */
+.line {
+    fill: none;
+    stroke-width: 2.5;
+}
+
+.area-fill {
+    opacity: 0.08;
+}
+
+.line-point {
+    stroke: white;
+    stroke-width: 1;
+}
+
+/* Labels */
+.label {
+    font-size: 9px;
+    text-anchor: middle;
+}
+
+/* Title styles */
+.chart-title {
+    font-size: 16px;
+    font-weight: bold;
+    text-anchor: middle;
+}
+
+.chart-subtitle {
+    font-size: 12px;
+    text-anchor: middle;
+    font-style: italic;
+}
+
+.chart-caption {
+    font-size: 10px;
+    text-anchor: middle;
+    font-style: italic;
+}
+
+/* Backgrounds for captions */
+.caption-box,
+.ratio-box {
+    fill: white;
+    stroke: lightgray;
+    stroke-width: 1;
+    opacity: 0.7;
+    rx: 5;
+    ry: 5;
+}
+
+/* Legend */
+.legend-box {
+    fill: white;
+    stroke: #e0e0e0;
+    stroke-width: 1;
+    opacity: 0.8;
+    rx: 5;
+    ry: 5;
+}
+
+.legend-title {
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.legend-item {
+    font-size: 9px;
+    alignment-baseline: middle;
+}
+
+/* Tooltip */
+.tooltip {
+    position: absolute;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    pointer-events: none;
+    font-size: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Watermark */
+.watermark {
+    opacity: 0.05;
+    font-size: 40px;
+    font-weight: bold;
+    fill: gray;
+    text-anchor: middle;
+}
+
+/* Highlight areas */
+.highlight-max {
+    fill: green;
+    opacity: 0.1;
+}
+
+.highlight-min {
+    fill: red;
+    opacity: 0.1;
+}
+
+/* Pie charts */
+.pie-slice {
+    stroke: white;
+    stroke-width: 2;
+}
+
+/* Table styles */
+.table-box {
+    stroke: #404040;
+    stroke-width: 1px;
+}
+
+.table-header {
+    fill: #4472C4;
+    color: white;
+    font-weight: bold;
+}
+
+.table-row-even {
+    fill: #E9EDF4;
+}
+
+.table-row-odd {
+    fill: #D9E1F2;
+}
+
+.table-cell {
+    font-size: 10px;
+    text-anchor: middle;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    svg {
+        height: auto !important;
+    }
+
+    .nav-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .nav-links {
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+}

@@ -1,0 +1,6 @@
+- hapus watermark
+- perbaiki layouting dan spacing
+- tambahin label penjelasan dibagian pie chart country_origin -> analisis negara asal tamu hotel
+- hapus log dibagian room_type
+- hapus angka, dan analisis ulang apa sudah betul untuk cancellation.html
+- push vercel, buat qr code untuk akses link vercelnya ke public

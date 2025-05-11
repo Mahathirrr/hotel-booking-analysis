@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perbandingan Pemesanan City Hotel vs Resort Hotel</title>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .chart-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .watermark {
+            font-size: 40px;
+            fill: gray;
+            opacity: 0.05;
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .chart-subtitle {
+            font-size: 12px;
+            font-style: italic;
+        }
+
+        .chart-caption {
+            font-size: 10px;
+            font-style: italic;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            background-color: #4472C4;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+
+        .back-button:hover {
+            background-color: #2C5AA0;
+        }
+
+        .ratio-box {
+            fill: #F0F0F0;
+            stroke: #CCCCCC;
+            stroke-width: 1px;
+            opacity: 0.8;
+            rx: 5;
+            ry: 5;
+        }
+
+        .caption-box {
+            fill: white;
+            stroke: lightgray;
+            stroke-width: 1px;
+            opacity: 0.7;
+            rx: 5;
+            ry: 5;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="text-2xl font-bold mb-4">Perbandingan Pemesanan City Hotel vs Resort Hotel</h1>
+        <a href="index.html" class="back-button">Kembali ke Beranda</a>
+        <div id="chart" class="chart-container"></div>
+    </div>
+
+    <script>
+        // Set dimensions to match Python visualization
+        const width = 1000;
+        const height = 600;
+        const margin = { top: 60, right: 40, bottom: 120, left: 40 };
+        const innerWidth = width - margin.left - margin.right;
+        const innerHeight = height - margin.top - margin.bottom;
+
+        // Colors from Python project - exact match
+        const main_colors = ["#2C7BB6", "#D7191C", "#1A9641", "#FDAE61", "#FFFFBF", "#9E0142", "#A6761D", "#666666"];
+
+        // Create SVG
+        const svg = d3.select("#chart")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        // Add title
+        svg.append("text")
+            .attr("class", "chart-title")
+            .attr("x", width / 2)
+            .attr("y", 30)
+            .attr("text-anchor", "middle")
+            .attr("font-weight", "bold")
+            .attr("font-size", "16px")
+            .text("Perbandingan Pemesanan City Hotel vs Resort Hotel");
+
+        // Add watermark
+        svg.append("text")
+            .attr("class", "watermark")
+            .attr("x", width / 2)
+            .attr("y", height / 2)
+            .attr("text-anchor", "middle")
+            .attr("transform", `rotate(30 ${width / 2} ${height / 2})`)
+            .text("Analisis Data Hotel Booking");
+
+        // Create groups for each chart
+        const pieChartGroup = svg.append("g")
+            .attr("transform", `translate(${margin.left + innerWidth / 4}, ${margin.top + innerHeight / 2})`);
+
+        const barChartGroup = svg.append("g")
+            .attr("transform", `translate(${margin.left + 3 * innerWidth / 4}, ${margin.top})`);
+
+        // Load data
+        d3.csv("data/hotel_bookings_processed.csv").then(data => {
+            // Process data for hotel types
+            const hotelCounts = d3.rollup(
+                data,
+                v => v.length,
+                d => d.hotel
+            );
+
+            // Convert to array format
+            const hotelData = Array.from(hotelCounts, ([key, value]) => ({ hotel: key, count: value }));
+
+            // Calculate percentages
+            const total = d3.sum(hotelData, d => d.count);
+            hotelData.forEach(d => d.percentage = (d.count / total * 100));
+
+            // Sort to ensure City Hotel comes first (matches Python)
+            hotelData.sort((a, b) => b.count - a.count);
+
+            // Calculate ratio
+            const ratio = hotelData[0].count / hotelData[1].count;
+
+            // Pie Chart
+            const radius = Math.min(innerWidth / 4, innerHeight / 2) - 40;
+
+            const arcGenerator = d3.arc()
+                .innerRadius(0)
+                .outerRadius(radius);
+
+            const pieGenerator = d3.pie()
+                .value(d => d.count)
+                .sort(null); // Preserve sorting
+
+            const arcs = pieChartGroup.selectAll(".arc")
+                .data(pieGenerator(hotelData))
+                .enter()
+                .append("g")
+                .attr("class", "arc");
+
+            // Pie slices
+            arcs.append("path")
+                .attr("d", arcGenerator)
+                .attr("fill", (d, i) => main_colors[i])
+                .attr("stroke", "white")
+                .attr("stroke-width", 2);
+
+            // Apply explode effect to first slice (City Hotel)
+            const firstArc = arcs.filter((d, i) => i === 0);
+            const firstCentroid = arcGenerator.centroid(firstArc.datum());
+            firstArc.attr("transform", `translate(${firstCentroid[0] * 0.1}, ${firstCentroid[1] * 0.1})`);
+
+            // Pie labels
+            arcs.append("text")
+                .attr("transform", d => {
+                    const pos = arcGenerator.centroid(d);
+                    const midAngle = Math.atan2(pos[1], pos[0]);
+                    const x = Math.cos(midAngle) * (radius + 20);
+                    const y = Math.sin(midAngle) * (radius + 20);
+                    return `translate(${x}, ${y})`;
+                })
+                .attr("text-anchor", d => {
+                    const midAngle = Math.atan2(arcGenerator.centroid(d)[1], arcGenerator.centroid(d)[0]);
+                    return (midAngle < -Math.PI / 2 || midAngle > Math.PI / 2) ? "end" : "start";
+                })
+                .attr("font-size", "12px")
+                .attr("font-weight", "bold")
+                .text(d => `${d.data.hotel} (${d.data.percentage.toFixed(1)}%)`);
+
+            pieChartGroup.append("text")
+                .attr("x", 0)
+                .attr("y", -radius - 20)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "14px")
+                .text("Persentase Pemesanan berdasarkan Jenis Hotel");
+
+            // Bar Chart
+            const barWidth = 70;
+            const barSpacing = 20;
+            const barChartWidth = (barWidth + barSpacing) * hotelData.length;
+
+            const xScale = d3.scaleBand()
+                .domain(hotelData.map(d => d.hotel))
+                .range([0, barChartWidth])
+                .padding(0.1);
+
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(hotelData, d => d.count) * 1.1])
+                .range([innerHeight, 0]);
+
+            // Bars
+            barChartGroup.selectAll(".bar")
+                .data(hotelData)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", d => -barChartWidth / 2 + xScale(d.hotel))
+                .attr("y", d => yScale(d.count))
+                .attr("width", xScale.bandwidth())
+                .attr("height", d => innerHeight - yScale(d.count))
+                .attr("fill", (d, i) => main_colors[i])
+                .attr("stroke", "white")
+                .attr("stroke-width", 1.5);
+
+            // Bar labels
+            barChartGroup.selectAll(".bar-label")
+                .data(hotelData)
+                .enter()
+                .append("text")
+                .attr("class", "bar-label")
+                .attr("x", d => -barChartWidth / 2 + xScale(d.hotel) + xScale.bandwidth() / 2)
+                .attr("y", d => yScale(d.count) + (innerHeight - yScale(d.count)) / 2)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "12px")
+                .attr("font-weight", "bold")
+                .attr("fill", "white")
+                .text(d => d3.format(",")(d.count));
+
+            // X-axis
+            barChartGroup.append("g")
+                .attr("transform", `translate(${-barChartWidth / 2}, ${innerHeight})`)
+                .call(d3.axisBottom(xScale));
+
+            // Y-axis with formatted numbers
+            barChartGroup.append("g")
+                .attr("transform", `translate(${-barChartWidth / 2}, 0)`)
+                .call(d3.axisLeft(yScale)
+                    .tickFormat(d => d3.format(",")(d)));
+
+            // Bar chart title
+            barChartGroup.append("text")
+                .attr("x", -barChartWidth / 2 + barChartWidth / 2)
+                .attr("y", -20)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "14px")
+                .text("Jumlah Pemesanan berdasarkan Jenis Hotel");
+
+            // Y-axis label
+            barChartGroup.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -innerHeight / 2)
+                .attr("y", -barChartWidth / 2 - 30)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "12px")
+                .text("Jumlah Pemesanan");
+
+            // Add grid to bar chart
+            barChartGroup.append("g")
+                .attr("class", "grid")
+                .attr("transform", `translate(${-barChartWidth / 2}, 0)`)
+                .call(d3.axisLeft(yScale)
+                    .tickSize(-barChartWidth)
+                    .tickFormat(""))
+                .selectAll("line")
+                .attr("stroke", "#e0e0e0")
+                .attr("stroke-opacity", 0.3);
+
+            // Ratio text with background box
+            const ratioText = `Rasio ${hotelData[0].hotel} : ${hotelData[1].hotel} = ${ratio.toFixed(1)} : 1`;
+
+            const ratioTextElem = svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", height - 60)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "12px")
+                .attr("font-weight", "bold")
+                .text(ratioText);
+
+            const ratioBox = ratioTextElem.node().getBBox();
+
+            svg.insert("rect", "text")
+                .attr("class", "ratio-box")
+                .attr("x", ratioBox.x - 10)
+                .attr("y", ratioBox.y - 5)
+                .attr("width", ratioBox.width + 20)
+                .attr("height", ratioBox.height + 10);
+
+            svg.node().appendChild(ratioTextElem.node());
+
+            // Caption
+            const caption = `City Hotel mendominasi dengan ${hotelData[0].percentage.toFixed(1)}% dari total pemesanan, sedangkan Resort Hotel menyumbang ${hotelData[1].percentage.toFixed(1)}%.`;
+
+            const captionElem = svg.append("text")
+                .attr("class", "chart-caption")
+                .attr("x", width / 2)
+                .attr("y", height - 30)
+                .attr("text-anchor", "middle")
+                .text(caption);
+
+            const captionBox = captionElem.node().getBBox();
+
+            svg.insert("rect", "text:last-of-type")
+                .attr("class", "caption-box")
+                .attr("x", captionBox.x - 10)
+                .attr("y", captionBox.y - 5)
+                .attr("width", captionBox.width + 20)
+                .attr("height", captionBox.height + 10);
+
+            svg.node().appendChild(captionElem.node());
+        });
+    </script>
+</body>
+
+</html>

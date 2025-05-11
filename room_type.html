@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisis Tipe Kamar Hotel</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .chart-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        h2 {
+            color: #444;
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+
+        .nav-link {
+            display: inline-block;
+            margin: 0 10px 20px 0;
+            padding: 8px 16px;
+            background-color: #4472C4;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .nav-link:hover {
+            background-color: #2C5AA0;
+        }
+
+        .grid line {
+            stroke: #e0e0e0;
+            stroke-opacity: 0.7;
+            shape-rendering: crispEdges;
+        }
+
+        .caption-box {
+            fill: #F0F0F0;
+            opacity: 0.7;
+            rx: 8;
+            ry: 8;
+        }
+
+        .chart-caption {
+            font-size: 10px;
+            fill: #333;
+        }
+
+        .axis {
+            font-size: 12px;
+        }
+
+        .axis line {
+            stroke: #e0e0e0;
+        }
+
+        .axis path {
+            display: none;
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: bold;
+            text-anchor: middle;
+        }
+
+        .legend-box {
+            fill: white;
+            stroke: #e0e0e0;
+            opacity: 0.8;
+            rx: 4;
+            ry: 4;
+        }
+
+        .legend-title {
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .legend-item {
+            font-size: 9px;
+        }
+
+        .watermark {
+            font-size: 40px;
+            fill: gray;
+            opacity: 0.05;
+            text-anchor: middle;
+        }
+
+        #visualization {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        #debug-info {
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #ffffcc;
+            border: 1px solid #e6e600;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="text-2xl font-bold mb-4">Analisis Tipe Kamar Hotel</h1>
+        <a href="index.html" class="nav-link">Kembali ke Beranda</a>
+        <div id="visualization"></div>
+        <div id="loading" class="text-center p-10">
+            <p>Memuat data...</p>
+        </div>
+        <!-- Div untuk menampilkan info debug jika terjadi error -->
+        <div id="debug-info" class="hidden"></div>
+    </div>
+
+    <script>
+        // Konstanta untuk visualisasi
+        const width = 600;
+        const height = 400;
+        const margin = { top: 40, right: 30, bottom: 50, left: 120 };
+
+        // Warna dari proyek Python
+        const main_colors = ["#2C7BB6", "#D7191C", "#1A9641", "#FDAE61", "#FFFFBF", "#9E0142", "#A6761D", "#666666"];
+
+        // Toggle untuk debug info
+        const DEBUG = true;
+
+        // Fungsi untuk menampilkan debug info
+        function showDebugInfo(message, data = null) {
+            if (!DEBUG) return;
+
+            const debugDiv = document.getElementById("debug-info");
+            debugDiv.classList.remove("hidden");
+
+            const timestamp = new Date().toLocaleTimeString();
+            let content = `<p>[${timestamp}] ${message}</p>`;
+
+            if (data) {
+                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+
+            // Tambahkan ke awal div
+            debugDiv.innerHTML = content + debugDiv.innerHTML;
+        }
+
+        // Fungsi untuk menambahkan watermark
+        function addWatermark(svg, width, height) {
+            svg.append("text")
+                .attr("class", "watermark")
+                .attr("x", width / 2)
+                .attr("y", height / 2)
+                .attr("transform", `rotate(30, ${width / 2}, ${height / 2})`)
+                .text("Analisis Data Hotel Booking");
+        }
+
+        // Fungsi untuk format angka ribuan
+        function formatThousands(x) {
+            return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        // Fungsi untuk menggabungkan kategori kecil
+        function combineSmallCategories(data, threshold = 0.05, name = 'Others') {
+            // PERBAIKAN: Tambahkan pengecekkan data kosong
+            if (!data || data.length === 0) {
+                showDebugInfo("Data kosong di combineSmallCategories");
+                return [];
+            }
+
+            const total = d3.sum(data, d => d.value);
+
+            // PERBAIKAN: Tangani jika total adalah 0
+            if (total === 0) {
+                showDebugInfo("Total 0 di combineSmallCategories");
+                return data;
+            }
+
+            // Menghitung proporsi
+            data.forEach(d => {
+                d.proportion = d.value / total;
+            });
+
+            // Memisahkan kategori kecil
+            const smallCategories = data.filter(d => d.proportion < threshold);
+            const largeCategories = data.filter(d => d.proportion >= threshold);
+
+            // Jika ada kategori kecil, gabungkan
+            if (smallCategories.length > 0) {
+                const otherValue = d3.sum(smallCategories, d => d.value);
+                const otherProportion = d3.sum(smallCategories, d => d.proportion);
+
+                largeCategories.push({
+                    key: name,
+                    value: otherValue,
+                    proportion: otherProportion
+                });
+            }
+
+            // Urutkan dari terbesar ke terkecil
+            return largeCategories.sort((a, b) => b.value - a.value);
+        }
+
+        // Memuat dan memproses data
+        d3.csv("data/hotel_bookings_processed.csv").then(function (data) {
+            document.getElementById("loading").style.display = "none";
+
+            // PERBAIKAN: Debug info
+            showDebugInfo("Data berhasil dimuat", { rows: data.length, sampleColumns: Object.keys(data[0]).slice(0, 5) });
+
+            // Memproses data untuk visualisasi tipe kamar
+            const roomTypeCounts = d3.rollup(
+                data,
+                v => v.length,
+                d => d.reserved_room_type
+            );
+
+            showDebugInfo("Room type counts", Array.from(roomTypeCounts.entries()));
+
+            // Konversi ke array untuk visualisasi
+            let roomTypeData = Array.from(roomTypeCounts, ([key, value]) => ({ key, value }));
+
+            // PERBAIKAN: Hitung persentase secara terpisah untuk memastikan properti percentage ada
+            const totalRoomTypes = d3.sum(roomTypeData, d => d.value);
+            roomTypeData.forEach(d => {
+                d.percentage = (d.value / totalRoomTypes) * 100;
+            });
+
+            showDebugInfo("Room type data dengan percentage", roomTypeData);
+
+            // Gabungkan kategori kecil
+            roomTypeData = combineSmallCategories(roomTypeData);
+
+            // PERBAIKAN: Tambahkan debug untuk roomTypeData setelah kombinasi
+            showDebugInfo("Room type data setelah kombinasi kategori kecil", roomTypeData);
+
+            // Hitung kecocokan tipe kamar
+            const roomMatchCounts = d3.rollup(
+                data,
+                v => v.length,
+                d => d.room_type_match === "1" || d.room_type_match === "true"
+            );
+
+            showDebugInfo("Room match counts", Array.from(roomMatchCounts.entries()));
+
+            // Hitung upgrade vs downgrade
+            let upgrades = 0;
+            let downgrades = 0;
+
+            data.forEach(d => {
+                if ((d.room_type_match === "0" || d.room_type_match === "false") &&
+                    d.assigned_room_type && d.reserved_room_type) {
+
+                    if (d.room_type_upgrade === "1" || d.room_type_upgrade === "true") {
+                        upgrades++;
+                    } else if (d.room_type_downgrade === "1" || d.room_type_downgrade === "true") {
+                        downgrades++;
+                    }
+                }
+            });
+
+            // Jika data upgrade/downgrade tidak tersedia, coba hitung dari room type
+            if (upgrades === 0 && downgrades === 0) {
+                data.forEach(d => {
+                    if ((d.room_type_match === "0" || d.room_type_match === "false") &&
+                        d.assigned_room_type && d.reserved_room_type) {
+
+                        const diff = d.assigned_room_type.charCodeAt(0) - d.reserved_room_type.charCodeAt(0);
+                        if (diff < 0) {
+                            upgrades++;
+                        } else if (diff > 0) {
+                            downgrades++;
+                        }
+                    }
+                });
+            }
+
+            showDebugInfo("Upgrade/downgrade counts", { upgrades, downgrades });
+
+            // Konversi ke array untuk pie chart 1
+            const roomMatchData = [
+                { key: true, value: roomMatchCounts.get(true) || 0, label: "Sesuai" },
+                { key: false, value: roomMatchCounts.get(false) || 0, label: "Tidak Sesuai" }
+            ];
+
+            // PERBAIKAN: Hitung persentase
+            const totalRoomMatches = d3.sum(roomMatchData, d => d.value);
+            roomMatchData.forEach(d => {
+                d.percentage = (d.value / totalRoomMatches) * 100;
+            });
+
+            showDebugInfo("Room match data dengan percentage", roomMatchData);
+
+            // Data untuk pie chart 2
+            const upgradeDowngradeData = [
+                { key: "Upgrade", value: upgrades },
+                { key: "Downgrade", value: downgrades }
+            ];
+
+            // PERBAIKAN: Hitung persentase
+            const totalChanges = upgrades + downgrades;
+            upgradeDowngradeData.forEach(d => {
+                d.percentage = totalChanges > 0 ? (d.value / totalChanges) * 100 : 0;
+            });
+
+            showDebugInfo("Upgrade/downgrade data dengan percentage", upgradeDowngradeData);
+
+            // Membuat container untuk ketiga chart
+            const container = d3.select("#visualization");
+
+            // Membuat container untuk setiap chart
+            const barChartContainer = container.append("div")
+                .attr("class", "chart-container");
+
+            showDebugInfo("Bar chart container dibuat");
+
+            const pieChart1Container = container.append("div")
+                .attr("class", "chart-container");
+
+            showDebugInfo("Pie chart 1 container dibuat");
+
+            const pieChart2Container = container.append("div")
+                .attr("class", "chart-container");
+
+            showDebugInfo("Pie chart 2 container dibuat");
+
+            try {
+                // 1. Membuat horizontal bar chart
+                createBarChart(barChartContainer, roomTypeData);
+                showDebugInfo("Bar chart berhasil dibuat");
+
+                // 2. Membuat pie chart untuk room match
+                createPieChart(pieChart1Container, roomMatchData, "Kecocokan Tipe Kamar yang Dipesan vs Diberikan", [main_colors[2], main_colors[1]], true);
+                showDebugInfo("Pie chart 1 berhasil dibuat");
+
+                // 3. Membuat pie chart untuk upgrade vs downgrade
+                if (totalChanges > 0) {
+                    createPieChart(pieChart2Container, upgradeDowngradeData, "Distribusi Upgrade vs Downgrade\n(untuk kamar yang tidak sesuai)", [main_colors[2], main_colors[1]], false);
+                    showDebugInfo("Pie chart 2 berhasil dibuat");
+                } else {
+                    pieChart2Container.append("div")
+                        .attr("class", "p-5 text-center text-gray-500")
+                        .text("Tidak ada data upgrade/downgrade yang tersedia");
+                    showDebugInfo("Tidak ada data untuk pie chart 2");
+                }
+            } catch (error) {
+                showDebugInfo("Error saat membuat chart: " + error.message);
+                console.error("Error creating charts:", error);
+            }
+
+            try {
+                // Tambahkan caption utama
+                container.append("div")
+                    .attr("class", "text-center mt-5 p-3 bg-gray-100 rounded")
+                    .html(`<p class="text-sm">
+                        Tipe kamar ${roomTypeData.length > 0 ? roomTypeData[0].key : 'A'} merupakan tipe kamar yang paling banyak dipesan dengan
+                        ${roomTypeData.length > 0 ? roomTypeData[0].percentage.toFixed(1) : 'N/A'}% dari total pemesanan.
+                        ${((roomMatchCounts.get(false) || 0) / (totalRoomTypes) * 100).toFixed(1)}% tamu mendapatkan tipe kamar yang berbeda dari yang mereka pesan,
+                        ${totalChanges > 0 ? `dengan ${(upgrades / (totalChanges) * 100).toFixed(1)}% mendapatkan upgrade dan ${(downgrades / (totalChanges) * 100).toFixed(1)}% mendapatkan downgrade.` : 'namun tidak ada data tentang upgrade/downgrade.'}
+                    </p>`);
+                showDebugInfo("Caption berhasil ditambahkan");
+            } catch (error) {
+                showDebugInfo("Error saat menambahkan caption: " + error.message);
+                console.error("Error adding caption:", error);
+            }
+        }).catch(function (error) {
+            console.error("Error loading data:", error);
+            document.getElementById("loading").innerHTML = `
+                <p class="text-red-500">Error loading data. Please make sure the CSV file is available.</p>
+                <p class="text-sm">${error}</p>
+            `;
+            showDebugInfo("Error memuat data: " + error.message);
+        });
+
+        // Fungsi untuk membuat horizontal bar chart
+        function createBarChart(container, data) {
+            // PERBAIKAN: Periksa data
+            if (!data || data.length === 0) {
+                container.append("div")
+                    .attr("class", "p-5 text-center text-red-500")
+                    .text("Tidak ada data untuk bar chart");
+                showDebugInfo("Tidak ada data untuk bar chart");
+                return;
+            }
+
+            // PERBAIKAN: Pastikan semua data memiliki percentage
+            const total = d3.sum(data, d => d.value);
+            data.forEach(d => {
+                if (d.percentage === undefined) {
+                    d.percentage = (d.value / total) * 100;
+                }
+            });
+
+            const chartWidth = width + margin.left + margin.right;
+            const chartHeight = height + margin.top + margin.bottom;
+
+            const svg = container.append("svg")
+                .attr("width", chartWidth)
+                .attr("height", chartHeight);
+
+            const g = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            svg.append("text")
+                .attr("class", "chart-title")
+                .attr("x", chartWidth / 2)
+                .attr("y", 25)
+                .text("Distribusi Tipe Kamar yang Dipesan");
+
+            // Scales
+            const xScale = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.value) * 1.1])
+                .range([0, width]);
+
+            const yScale = d3.scaleBand()
+                .domain(data.map(d => d.key))
+                .range([0, height])
+                .padding(0.2);
+
+            // Color scale
+            const colorScale = d3.scaleSequential()
+                .domain([0, data.length - 1])
+                .interpolator(d3.interpolateViridis);
+
+            // Grid
+            g.append("g")
+                .attr("class", "grid")
+                .call(d3.axisBottom(xScale)
+                    .tickSize(height)
+                    .tickFormat("")
+                )
+                .style("opacity", 0.3);
+
+            // Axes
+            g.append("g")
+                .attr("class", "axis")
+                .call(d3.axisLeft(yScale))
+                .selectAll("text")
+                .style("text-anchor", "end");
+
+            g.append("g")
+                .attr("class", "axis")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(xScale).tickFormat(d => formatThousands(d)));
+
+            // Bars
+            g.selectAll(".bar")
+                .data(data)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("y", d => yScale(d.key))
+                .attr("height", yScale.bandwidth())
+                .attr("x", 0)
+                .attr("width", d => xScale(d.value))
+                .attr("fill", (d, i) => colorScale(i));
+
+            // PERBAIKAN: Labels dengan pengecekkan null/undefined
+            g.selectAll(".label")
+                .data(data)
+                .enter()
+                .append("text")
+                .attr("class", "label")
+                .attr("x", d => xScale(d.value) + 5)
+                .attr("y", d => yScale(d.key) + yScale.bandwidth() / 2)
+                .attr("dy", "0.35em")
+                .text(d => `${formatThousands(d.value)} (${(d.percentage || 0).toFixed(1)}%)`);
+
+            // Axis labels
+            svg.append("text")
+                .attr("class", "axis")
+                .attr("text-anchor", "middle")
+                .attr("x", margin.left + width / 2)
+                .attr("y", chartHeight - 10)
+                .text("Jumlah Pemesanan");
+
+            svg.append("text")
+                .attr("class", "axis")
+                .attr("text-anchor", "middle")
+                .attr("transform", `translate(20, ${margin.top + height / 2})rotate(-90)`)
+                .text("Tipe Kamar");
+
+            // Add watermark
+            addWatermark(svg, chartWidth, chartHeight);
+        }
+
+        // Fungsi untuk membuat pie chart
+        function createPieChart(container, data, title, colors, explodeSecond = false) {
+            // PERBAIKAN: Periksa data
+            if (!data || data.length === 0 || data.every(d => !d.value)) {
+                container.append("div")
+                    .attr("class", "p-5 text-center text-red-500")
+                    .text("Tidak ada data untuk pie chart");
+                showDebugInfo("Tidak ada data untuk pie chart: " + title);
+                return;
+            }
+
+            // PERBAIKAN: Pastikan semua data memiliki percentage
+            const total = d3.sum(data, d => d.value);
+            if (total === 0) {
+                container.append("div")
+                    .attr("class", "p-5 text-center text-red-500")
+                    .text("Total nilai data adalah 0");
+                return;
+            }
+
+            data.forEach(d => {
+                if (d.percentage === undefined) {
+                    d.percentage = (d.value / total) * 100;
+                }
+            });
+
+            const chartWidth = width * 0.8;
+            const chartHeight = height * 0.8;
+            const radius = Math.min(chartWidth, chartHeight) / 2;
+
+            const svg = container.append("svg")
+                .attr("width", chartWidth)
+                .attr("height", chartHeight);
+
+            const g = svg.append("g")
+                .attr("transform", `translate(${chartWidth / 2},${chartHeight / 2})`);
+
+            svg.append("text")
+                .attr("class", "chart-title")
+                .attr("x", chartWidth / 2)
+                .attr("y", 25)
+                .style("white-space", "pre-line")
+                .text(title);
+
+            // Create arc generator
+            const arc = d3.arc()
+                .innerRadius(0)
+                .outerRadius(radius - 20);
+
+            const labelArc = d3.arc()
+                .innerRadius(radius - 40)
+                .outerRadius(radius - 40);
+
+            // Create pie generator
+            const pie = d3.pie()
+                .sort(null)
+                .value(d => d.value);
+
+            // Explode array
+            const explode = data.map((_, i) => {
+                if (explodeSecond && i === 1) return 0.1;
+                if (!explodeSecond && i === 0) return 0.1;
+                return 0;
+            });
+
+            // Slices
+            const arcs = g.selectAll(".arc")
+                .data(pie(data))
+                .enter()
+                .append("g")
+                .attr("class", "arc")
+                .attr("transform", (d, i) => {
+                    if (explode[i] > 0) {
+                        const centroid = arc.centroid(d);
+                        const x = centroid[0] * explode[i];
+                        const y = centroid[1] * explode[i];
+                        return `translate(${x}, ${y})`;
+                    }
+                    return "";
+                });
+
+            arcs.append("path")
+                .attr("d", arc)
+                .attr("fill", (d, i) => colors[i % colors.length])
+                .attr("stroke", "white")
+                .attr("stroke-width", 2);
+
+            // PERBAIKAN: Labels dengan pengecekkan null/undefined
+            arcs.append("text")
+                .attr("transform", d => `translate(${labelArc.centroid(d)})`)
+                .attr("dy", ".35em")
+                .attr("text-anchor", "middle")
+                .attr("font-size", "11px")
+                .text(d => {
+                    const item = data[d.index];
+                    const label = item.label || item.key;
+                    const percentage = item.percentage !== undefined ? item.percentage.toFixed(1) : "0.0";
+                    return `${label} (${percentage}%)`;
+                });
+
+            // Add watermark
+            addWatermark(svg, chartWidth, chartHeight);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisis Negara Asal Tamu Hotel</title>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #2C7BB6;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        #visualization {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .axis line,
+        .axis path {
+            stroke: #ccc;
+            stroke-width: 1;
+            shape-rendering: crispEdges;
+        }
+
+        .grid line {
+            stroke: #eee;
+            shape-rendering: crispEdges;
+        }
+
+        .bar {
+            fill-opacity: 0.8;
+        }
+
+        .bar:hover {
+            fill-opacity: 1;
+        }
+
+        .highlight-max {
+            fill: green;
+            fill-opacity: 0.1;
+        }
+
+        .highlight-min {
+            fill: red;
+            fill-opacity: 0.1;
+        }
+
+        .area-fill {
+            fill-opacity: 0.08;
+        }
+
+        .line {
+            fill: none;
+            stroke-width: 2.5;
+        }
+
+        .line-point {
+            stroke-width: 1.5;
+            stroke: white;
+        }
+
+        .label {
+            font-size: 9px;
+            text-anchor: middle;
+        }
+
+        .legend-box {
+            fill: white;
+            stroke: #ddd;
+            stroke-width: 1px;
+            rx: 4;
+            ry: 4;
+            fill-opacity: 0.8;
+        }
+
+        .legend-title {
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .legend-item {
+            font-size: 9px;
+            alignment-baseline: middle;
+        }
+
+        .caption-box,
+        .ratio-box {
+            fill: white;
+            stroke: #ddd;
+            stroke-width: 1px;
+            rx: 4;
+            ry: 4;
+            fill-opacity: 0.7;
+        }
+
+        .chart-caption {
+            font-size: 10px;
+            text-anchor: middle;
+        }
+
+        .watermark {
+            font-size: 40px;
+            fill: gray;
+            fill-opacity: 0.05;
+            text-anchor: middle;
+            alignment-baseline: middle;
+            transform: rotate(-30deg);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #4472C4;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #D9E1F2;
+        }
+
+        tr:nth-child(odd) {
+            background-color: #E9EDF4;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1.2fr;
+            gap: 20px;
+            height: 800px;
+        }
+
+        .grid-item-full {
+            grid-column: 1 / span 2;
+        }
+
+        .region-pie-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .country-info-table {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="text-2xl font-bold mb-6">Analisis Negara Asal Tamu Hotel</h1>
+        <a href="index.html" class="back-link">← Kembali ke Beranda</a>
+
+        <div id="visualization" class="grid-container">
+            <!-- Top countries bar chart will be rendered here -->
+            <div id="top-countries" class="grid-item-full"></div>
+
+            <!-- Region pie chart -->
+            <div id="region-pie" class="region-pie-container"></div>
+
+            <!-- Country information table -->
+            <div id="country-info-table" class="country-info-table"></div>
+        </div>
+
+        <div id="insights" class="bg-white rounded-lg shadow p-4 mb-4">
+            <h2 class="text-lg font-bold mb-2">Insight: Negara Asal Tamu</h2>
+            <ol class="list-decimal pl-8">
+                <li>Portugal (PRT) merupakan negara asal tamu terbanyak dengan 40.7% dari total pemesanan.</li>
+                <li>Inggris (GBR) merupakan negara asal tamu terbanyak kedua dengan 10.2% dari total pemesanan.</li>
+                <li>Prancis (FRA) merupakan negara asal tamu terbanyak ketiga dengan 8.7% dari total pemesanan.</li>
+                <li>Rasio pemesanan dari Portugal dibandingkan Inggris adalah 4.0 : 1.</li>
+                <li>Eropa merupakan region asal tamu terbanyak dengan 90.4% dari total pemesanan.</li>
+                <li>10 negara teratas menyumbang 84.5% dari total pemesanan.</li>
+                <li>Tamu domestik (dari Portugal) mendominasi pemesanan, menunjukkan bahwa pasar lokal sangat penting
+                    bagi hotel.</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Main colors from Python project - exact match
+        const main_colors = ["#2C7BB6", "#D7191C", "#1A9641", "#FDAE61", "#FFFFBF", "#9E0142", "#A6761D", "#666666"];
+
+        // Mapping for country codes to readable names
+        const countryNames = {
+            'PRT': 'Portugal',
+            'GBR': 'Inggris (UK)',
+            'FRA': 'Prancis',
+            'ESP': 'Spanyol',
+            'DEU': 'Jerman',
+            'ITA': 'Italia',
+            'IRL': 'Irlandia',
+            'BEL': 'Belgia',
+            'BRA': 'Brasil',
+            'NLD': 'Belanda',
+            'USA': 'Amerika Serikat',
+            'CHE': 'Swiss',
+            'AUT': 'Austria',
+            'CHN': 'China',
+            'POL': 'Polandia',
+            'RUS': 'Rusia'
+        };
+
+        // Helper function to format thousands
+        function formatThousands(num) {
+            return Number.isInteger(num) ? num.toLocaleString('en-US') : num.toFixed(1);
+        }
+
+        // Helper function for combining small categories
+        function combineSmallCategories(data, threshold = 0.05, otherName = 'Others') {
+            const total = d3.sum(data, d => d.value);
+            const thresholdValue = total * threshold;
+
+            const smallCategories = data.filter(d => d.value < thresholdValue);
+            const largeCategories = data.filter(d => d.value >= thresholdValue);
+
+            if (smallCategories.length === 0) return data;
+
+            const otherValue = d3.sum(smallCategories, d => d.value);
+
+            return [...largeCategories, {
+                key: otherName,
+                value: otherValue
+            }].sort((a, b) => b.value - a.value);
+        }
+
+        // Helper function to add watermark
+        function addWatermark(svg, width, height) {
+            svg.append("text")
+                .attr("class", "watermark")
+                .attr("x", width / 2)
+                .attr("y", height / 2)
+                .text("Analisis Data Hotel Booking");
+        }
+
+        // Load data
+        d3.csv("data/hotel_bookings_processed.csv").then(data => {
+            // Process data for country counts
+            const countryCounts = d3.rollup(
+                data,
+                v => v.length,
+                d => d.country
+            );
+
+            // Convert Map to array and sort
+            let countryArray = Array.from(countryCounts, ([key, value]) => ({ key, value }))
+                .sort((a, b) => b.value - a.value);
+
+            // Get top 10 countries
+            const topCountries = countryArray.slice(0, 10);
+
+            // Calculate percentages
+            const total = d3.sum(countryArray, d => d.value);
+            const countryPercentage = new Map(countryArray.map(d => [d.key, (d.value / total * 100)]));
+
+            // Process data for region counts
+            const regionCounts = d3.rollup(
+                data,
+                v => v.length,
+                d => d.region
+            );
+
+            let regionArray = Array.from(regionCounts, ([key, value]) => ({ key, value }))
+                .sort((a, b) => b.value - a.value);
+
+            // Combine small regions
+            regionArray = combineSmallCategories(regionArray, 0.03);
+
+            // Calculate region percentages
+            const regionTotal = d3.sum(regionArray, d => d.value);
+            const regionPercentages = regionArray.map(d => ({
+                ...d,
+                percentage: (d.value / regionTotal * 100)
+            }));
+
+            // Create visualizations
+            createTopCountriesChart(topCountries, total);
+            createRegionPieChart(regionArray);
+            createCountryInfoTable(topCountries, countryPercentage);
+        });
+
+        function createTopCountriesChart(data, total) {
+            // Set dimensions and margins
+            const margin = { top: 50, right: 30, bottom: 30, left: 150 };
+            const width = document.getElementById('top-countries').offsetWidth - margin.left - margin.right;
+            const height = document.getElementById('top-countries').offsetHeight - margin.top - margin.bottom;
+
+            // Create SVG
+            const svg = d3.select("#top-countries")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            // Set up scales
+            const x = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.value) * 1.1])
+                .range([0, width]);
+
+            const y = d3.scaleBand()
+                .domain(data.map(d => d.key))
+                .range([0, height])
+                .padding(0.2);
+
+            // Color scale using viridis colormap (similar to Python's viridis)
+            const colorScale = d3.scaleSequential(d3.interpolateViridis)
+                .domain([0, data.length - 1]);
+
+            // Add axes
+            svg.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x).ticks(5).tickFormat(d => formatThousands(d)))
+                .selectAll("text")
+                .style("font-size", "10px");
+
+            // Add country names instead of codes
+            svg.append("g")
+                .call(d3.axisLeft(y).tickFormat(d => countryNames[d] || d))
+                .selectAll("text")
+                .style("font-size", "11px");
+
+            // Add grid lines
+            svg.append("g")
+                .attr("class", "grid")
+                .call(d3.axisBottom(x)
+                    .tickSize(height)
+                    .tickFormat("")
+                )
+                .style("opacity", 0.3);
+
+            // Add bars
+            const bars = svg.selectAll(".bar")
+                .data(data)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("y", d => y(d.key))
+                .attr("height", y.bandwidth())
+                .attr("x", 0)
+                .attr("width", d => x(d.value))
+                .attr("fill", (d, i) => colorScale(i));
+
+            // Add labels to bars
+            svg.selectAll(".label")
+                .data(data)
+                .enter()
+                .append("text")
+                .attr("x", d => x(d.value) + 5)
+                .attr("y", d => y(d.key) + y.bandwidth() / 2)
+                .attr("dy", "0.35em")
+                .style("font-size", "9px")
+                .style("fill", "black")
+                .text(d => formatThousands(d.value));
+
+            // Add title
+            svg.append("text")
+                .attr("class", "chart-title")
+                .attr("x", width / 2)
+                .attr("y", -20)
+                .attr("text-anchor", "middle")
+                .style("font-size", "14px")
+                .style("font-weight", "bold")
+                .text("10 Negara Asal Tamu Teratas");
+
+            // Add x-axis label
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", height + margin.bottom - 5)
+                .attr("text-anchor", "middle")
+                .style("font-size", "12px")
+                .text("Jumlah Pemesanan");
+
+            // Add y-axis label
+            svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -height / 2)
+                .attr("y", -margin.left + 80)
+                .attr("text-anchor", "middle")
+                .style("font-size", "12px")
+                .text("Negara");
+        }
+
+        function createRegionPieChart(data) {
+            // Set dimensions
+            const width = document.getElementById('region-pie').offsetWidth;
+            const height = document.getElementById('region-pie').offsetHeight;
+            const radius = Math.min(width, height) * 0.5;
+
+            // Create SVG
+            const svg = d3.select("#region-pie")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height)
+                .append("g")
+                .attr("transform", `translate(${width / 2},${height / 2})`);
+
+            // Create color scale
+            const color = d3.scaleOrdinal()
+                .domain(data.map(d => d.key))
+                .range(main_colors.slice(0, data.length));
+
+            // Create pie layout
+            const pie = d3.pie()
+                .value(d => d.value)
+                .sort(null);
+
+            const arcs = pie(data);
+
+            // Calculate percentages
+            const total = d3.sum(data, d => d.value);
+
+            // Create arc generator
+            const arc = d3.arc()
+                .innerRadius(0)
+                .outerRadius(radius - 40);
+
+            // Generate explode array (explode first slice)
+            const explode = arcs.map((d, i) => i === 0 ? 0.1 : 0);
+
+            // Add arcs with explode
+            const path = svg.selectAll('.arc')
+                .data(arcs)
+                .enter()
+                .append('g')
+                .attr('class', 'arc')
+                .attr('transform', (d, i) => {
+                    if (explode[i] === 0) return '';
+                    const centroid = arc.centroid(d);
+                    return `translate(${centroid[0] * explode[i] * 2},${centroid[1] * explode[i] * 2})`;
+                });
+
+            path.append('path')
+                .attr('d', arc)
+                .attr('fill', d => color(d.data.key))
+                .style('stroke', 'white')
+                .style('stroke-width', '1px');
+
+            // Add labels with percentages
+            path.append('text')
+                .attr('transform', d => `translate(${arc.centroid(d)})`)
+                .attr('text-anchor', 'middle')
+                .attr('dy', '0.35em')
+                .style('font-size', '11px')
+                .style('font-weight', 'normal')
+                .text(d => {
+                    const percentage = (d.data.value / total * 100).toFixed(1);
+                    return `${d.data.key} (${percentage}%)`;
+                });
+
+            // Add title
+            svg.append("text")
+                .attr("class", "chart-title")
+                .attr("x", 0)
+                .attr("y", -radius - 10)
+                .attr("text-anchor", "middle")
+                .style("font-size", "14px")
+                .style("font-weight", "bold")
+                .text("Distribusi Pemesanan berdasarkan Region");
+        }
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tren Jumlah Pemesanan Hotel Setiap Bulan</title>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .chart-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .axis line,
+        .axis path {
+            stroke: #ccc;
+        }
+
+        .grid line {
+            stroke: #eee;
+            stroke-opacity: 0.7;
+            shape-rendering: crispEdges;
+        }
+
+        .grid path {
+            stroke-width: 0;
+        }
+
+        .highlight-max {
+            fill: green;
+            opacity: 0.1;
+        }
+
+        .highlight-min {
+            fill: red;
+            opacity: 0.1;
+        }
+
+        .bar {
+            stroke: white;
+            stroke-width: 1px;
+        }
+
+        .area-fill {
+            opacity: 0.08;
+        }
+
+        .line {
+            fill: none;
+        }
+
+        .line-point {
+            stroke: white;
+            stroke-width: 1.5px;
+        }
+
+        .caption-box,
+        .ratio-box {
+            fill: #f0f0f0;
+            opacity: 0.7;
+            rx: 5;
+            ry: 5;
+        }
+
+        .legend-box {
+            fill: white;
+            opacity: 0.8;
+            rx: 5;
+            ry: 5;
+            stroke: #e0e0e0;
+            stroke-width: 1px;
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .chart-subtitle {
+            font-size: 14px;
+            font-style: italic;
+        }
+
+        .chart-caption {
+            font-size: 12px;
+            fill: #555;
+        }
+
+        .axis-title {
+            font-size: 14px;
+        }
+
+        .watermark {
+            font-size: 40px;
+            fill: gray;
+            opacity: 0.05;
+        }
+
+        .legend-title {
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .legend-item {
+            font-size: 9px;
+        }
+
+        .value-label {
+            font-size: 11px;
+            font-weight: bold;
+            fill: #444;
+            text-anchor: middle;
+        }
+
+        .link-button {
+            display: inline-block;
+            padding: 8px 16px;
+            background-color: #2C7BB6;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .link-button:hover {
+            background-color: #1f5a87;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+    <div class="container">
+        <div class="flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-gray-800 mb-4">Tren Jumlah Pemesanan Hotel Setiap Bulan</h1>
+            <a href="index.html" class="link-button">Kembali ke Beranda</a>
+        </div>
+        <div class="chart-container">
+            <div id="loading" class="text-center py-20">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                <p class="mt-4 text-gray-600">Memuat data...</p>
+            </div>
+            <div id="chart" class="hidden"></div>
+        </div>
+        <div class="mt-8 bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-bold mb-3">Insight</h2>
+            <div id="insight" class="text-gray-700">
+                <p><span class="font-semibold">1.</span> Bulan dengan jumlah pemesanan tertinggi adalah <span
+                        id="max-month" class="font-semibold text-green-600"></span> dengan <span id="max-value"
+                        class="font-semibold text-green-600"></span> pemesanan.</p>
+                <p><span class="font-semibold">2.</span> Bulan dengan jumlah pemesanan terendah adalah <span
+                        id="min-month" class="font-semibold text-red-600"></span> dengan <span id="min-value"
+                        class="font-semibold text-red-600"></span> pemesanan.</p>
+                <p><span class="font-semibold">3.</span> Terdapat pola musiman yang jelas, dengan puncak pemesanan pada
+                    bulan Juli-Agustus (musim panas di Eropa).</p>
+                <p><span class="font-semibold">4.</span> City Hotel secara konsisten memiliki jumlah pemesanan lebih
+                    tinggi dibandingkan Resort Hotel di semua bulan.</p>
+                <p><span class="font-semibold">5.</span> Perbedaan jumlah pemesanan antara bulan tertinggi dan terendah
+                    adalah <span id="diff-value" class="font-semibold"></span> pemesanan (<span id="diff-percent"
+                        class="font-semibold"></span>% lebih tinggi).</p>
+                <p><span class="font-semibold">6.</span> Rasio pemesanan tertinggi:terendah adalah <span
+                        id="ratio-value" class="font-semibold"></span>:1.</p>
+                <p><span class="font-semibold">7.</span> Tren pemesanan menunjukkan peningkatan bertahap dari Januari
+                    hingga puncaknya di Agustus, kemudian menurun hingga Desember.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Colors from Python project - exact match
+        const main_colors = ["#2C7BB6", "#D7191C", "#1A9641", "#FDAE61", "#FFFFBF", "#9E0142", "#A6761D", "#666666"];
+
+        // Format number with thousands separator
+        function formatNumber(num) {
+            return new Intl.NumberFormat().format(Math.round(num));
+        }
+
+        // Add watermark
+        function addWatermark(svg, width, height) {
+            svg.append("text")
+                .attr("class", "watermark")
+                .attr("x", width / 2)
+                .attr("y", height / 2)
+                .attr("text-anchor", "middle")
+                .attr("transform", `rotate(30 ${width / 2} ${height / 2})`)
+                .text("Analisis Data Hotel Booking");
+        }
+
+        // Main function to create the chart
+        function createMonthlyTrendsChart(data) {
+            // Hide loading indicator and show chart
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('chart').classList.remove('hidden');
+
+            // Process data
+            const monthOrder = [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ];
+
+            // Group data by month and hotel type
+            const monthlyData = d3.group(data, d => d.arrival_month);
+
+            // Create formatted data array
+            const formattedData = monthOrder.map(month => {
+                const monthData = monthlyData.get(month) || [];
+                const cityCount = monthData.filter(d => d.hotel === "City Hotel").length;
+                const resortCount = monthData.filter(d => d.hotel === "Resort Hotel").length;
+                return {
+                    month,
+                    "City Hotel": cityCount,
+                    "Resort Hotel": resortCount,
+                    "Total": cityCount + resortCount
+                };
+            });
+
+            // Find max and min months
+            const maxMonth = formattedData.reduce((a, b) => a.Total > b.Total ? a : b);
+            const minMonth = formattedData.reduce((a, b) => a.Total < b.Total ? a : b);
+
+            // Calculate additional metrics
+            const maxValue = maxMonth.Total;
+            const minValue = minMonth.Total;
+            const diffValue = maxValue - minValue;
+            const diffPercent = ((maxValue / minValue) - 1) * 100;
+            const ratio = maxValue / minValue;
+
+            // Update insight values
+            document.getElementById('max-month').textContent = maxMonth.month;
+            document.getElementById('max-value').textContent = formatNumber(maxValue);
+            document.getElementById('min-month').textContent = minMonth.month;
+            document.getElementById('min-value').textContent = formatNumber(minValue);
+            document.getElementById('diff-value').textContent = formatNumber(diffValue);
+            document.getElementById('diff-percent').textContent = diffPercent.toFixed(1);
+            document.getElementById('ratio-value').textContent = ratio.toFixed(1);
+
+            // Set up SVG dimensions
+            const width = 960;
+            const height = 600;
+            const margin = { top: 80, right: 80, bottom: 120, left: 80 };
+            const innerWidth = width - margin.left - margin.right;
+            const innerHeight = height - margin.top - margin.bottom;
+
+            // Create SVG
+            const svg = d3.select("#chart")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+            const g = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            // Set up scales
+            const xScale = d3.scaleBand()
+                .domain(monthOrder)
+                .range([0, innerWidth])
+                .paddingInner(0.2);
+
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(formattedData, d => Math.max(d["City Hotel"], d["Resort Hotel"])) * 1.1])
+                .range([innerHeight, 0]);
+
+            const y2Scale = d3.scaleLinear()
+                .domain([0, d3.max(formattedData, d => d.Total) * 1.1])
+                .range([innerHeight, 0]);
+
+            // Add grid lines
+            g.append("g")
+                .attr("class", "grid")
+                .call(d3.axisLeft(yScale)
+                    .tickSize(-innerWidth)
+                    .tickFormat("")
+                );
+
+            // Highlight max and min months
+            g.append("rect")
+                .attr("class", "highlight-max")
+                .attr("x", xScale(maxMonth.month))
+                .attr("y", 0)
+                .attr("width", xScale.bandwidth())
+                .attr("height", innerHeight);
+
+            g.append("rect")
+                .attr("class", "highlight-min")
+                .attr("x", xScale(minMonth.month))
+                .attr("y", 0)
+                .attr("width", xScale.bandwidth())
+                .attr("height", innerHeight);
+
+            // Add axes
+            g.append("g")
+                .attr("class", "axis x-axis")
+                .attr("transform", `translate(0,${innerHeight})`)
+                .call(d3.axisBottom(xScale))
+                .selectAll("text")
+                .attr("transform", "rotate(30)")
+                .style("text-anchor", "start");
+
+            g.append("g")
+                .attr("class", "axis y-axis")
+                .call(d3.axisLeft(yScale).tickFormat(d => formatNumber(d)));
+
+            const y2Axis = g.append("g")
+                .attr("class", "axis y2-axis")
+                .attr("transform", `translate(${innerWidth},0)`)
+                .call(d3.axisRight(y2Scale).tickFormat(d => formatNumber(d)));
+
+            y2Axis.selectAll("text")
+                .attr("fill", main_colors[2]);
+
+            // Bar width
+            const barWidth = xScale.bandwidth() / 2.5;
+
+            // Add bars for City Hotel
+            g.selectAll(".city-bar")
+                .data(formattedData)
+                .join("rect")
+                .attr("class", "bar city-bar")
+                .attr("x", d => xScale(d.month) + xScale.bandwidth() / 2 - barWidth - 3)
+                .attr("y", d => yScale(d["City Hotel"]))
+                .attr("width", barWidth)
+                .attr("height", d => innerHeight - yScale(d["City Hotel"]))
+                .attr("fill", main_colors[0]);
+
+            // Add bars for Resort Hotel
+            g.selectAll(".resort-bar")
+                .data(formattedData)
+                .join("rect")
+                .attr("class", "bar resort-bar")
+                .attr("x", d => xScale(d.month) + xScale.bandwidth() / 2 + 3)
+                .attr("y", d => yScale(d["Resort Hotel"]))
+                .attr("width", barWidth)
+                .attr("height", d => innerHeight - yScale(d["Resort Hotel"]))
+                .attr("fill", main_colors[1]);
+
+            // Create line for total bookings
+            const line = d3.line()
+                .x(d => xScale(d.month) + xScale.bandwidth() / 2)
+                .y(d => y2Scale(d.Total))
+                .curve(d3.curveMonotoneX);
+
+            g.append("path")
+                .datum(formattedData)
+                .attr("class", "line")
+                .attr("d", line)
+                .attr("stroke", main_colors[2])
+                .attr("stroke-width", 2.5);
+
+            // Add area fill under the line
+            const area = d3.area()
+                .x(d => xScale(d.month) + xScale.bandwidth() / 2)
+                .y0(innerHeight)
+                .y1(d => y2Scale(d.Total))
+                .curve(d3.curveMonotoneX);
+
+            g.append("path")
+                .datum(formattedData)
+                .attr("class", "area-fill")
+                .attr("d", area)
+                .attr("fill", main_colors[2]);
+
+            // Add points on the line
+            g.selectAll(".point")
+                .data(formattedData)
+                .join("circle")
+                .attr("class", "line-point")
+                .attr("cx", d => xScale(d.month) + xScale.bandwidth() / 2)
+                .attr("cy", d => y2Scale(d.Total))
+                .attr("r", 4)
+                .attr("fill", main_colors[2]);
+
+            // Add value labels for total line
+            g.selectAll(".value-label")
+                .data(formattedData)
+                .join("text")
+                .attr("class", "value-label")
+                .attr("x", d => xScale(d.month) + xScale.bandwidth() / 2)
+                .attr("y", d => y2Scale(d.Total) - 10)
+                .text(d => formatNumber(d.Total));
+
+            // Add axes titles
+            svg.append("text")
+                .attr("class", "axis-title")
+                .attr("x", width / 2)
+                .attr("y", height - 30)
+                .attr("text-anchor", "middle")
+                .text("Bulan");
+
+            svg.append("text")
+                .attr("class", "axis-title")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -height / 2)
+                .attr("y", 30)
+                .attr("text-anchor", "middle")
+                .text("Jumlah Pemesanan");
+
+            svg.append("text")
+                .attr("class", "axis-title")
+                .attr("transform", "rotate(90)")
+                .attr("x", height / 2)
+                .attr("y", -width + 30)
+                .attr("text-anchor", "middle")
+                .attr("fill", main_colors[2])
+                .text("Total Pemesanan");
+
+            // Add title
+            svg.append("text")
+                .attr("class", "chart-title")
+                .attr("x", width / 2)
+                .attr("y", 30)
+                .attr("text-anchor", "middle")
+                .text("Tren Jumlah Pemesanan Hotel Setiap Bulan");
+
+            // Add caption
+            const caption = `Tren pemesanan hotel menunjukkan pola musiman dengan puncak di ${maxMonth.month} (${formatNumber(maxValue)} pemesanan) dan terendah di ${minMonth.month} (${formatNumber(minValue)} pemesanan). City Hotel secara konsisten lebih populer dibandingkan Resort Hotel.`;
+
+            // Add a background rectangle for the caption
+            const captionY = height - 60;
+            const captionText = svg.append("text")
+                .attr("class", "chart-caption")
+                .attr("x", width / 2)
+                .attr("y", captionY)
+                .attr("text-anchor", "middle")
+                .text(caption);
+
+            // Get caption dimensions to create background
+            // Since we can't directly get the text element size in SVG, we'll estimate
+            const captionWidth = Math.min(caption.length * 5.5, width * 0.8);
+            const captionHeight = 20;
+
+            svg.insert("rect", "text.chart-caption")
+                .attr("class", "caption-box")
+                .attr("x", width / 2 - captionWidth / 2)
+                .attr("y", captionY - 15)
+                .attr("width", captionWidth)
+                .attr("height", captionHeight);
+
+            // Place the caption text on top of the background
+            svg.node().appendChild(captionText.node());
+
+            // Add ratio text with background
+            const ratioText = `Rasio Tertinggi:Terendah = ${ratio.toFixed(1)}:1`;
+            const ratioY = height - 90;
+
+            const ratioTextElem = svg.append("text")
+                .attr("class", "chart-caption")
+                .attr("x", width / 2)
+                .attr("y", ratioY)
+                .attr("text-anchor", "middle")
+                .text(ratioText);
+
+            // Background for ratio text
+            const ratioWidth = Math.min(ratioText.length * 7, width * 0.4);
+            const ratioHeight = 20;
+
+            svg.insert("rect", "text:last-of-type")
+                .attr("class", "ratio-box")
+                .attr("x", width / 2 - ratioWidth / 2)
+                .attr("y", ratioY - 15)
+                .attr("width", ratioWidth)
+                .attr("height", ratioHeight);
+
+            // Move ratio text to front
+            svg.node().appendChild(ratioTextElem.node());
+
+            // Add legend
+            const legend = svg.append("g")
+                .attr("transform", `translate(${width - margin.right - 130}, ${margin.top + 20})`);
+
+            // Legend background
+            legend.append("rect")
+                .attr("class", "legend-box")
+                .attr("x", -10)
+                .attr("y", -20)
+                .attr("width", 120)
+                .attr("height", 105);
+
+            // Legend title
+            legend.append("text")
+                .attr("class", "legend-title")
+                .attr("x", 50)
+                .attr("y", -5)
+                .attr("text-anchor", "middle")
+                .text("Jenis Pemesanan");
+
+            // Legend items
+            const legendItems = [
+                { label: "City Hotel", color: main_colors[0] },
+                { label: "Resort Hotel", color: main_colors[1] },
+                { label: "Total", color: main_colors[2] }
+            ];
+
+            legendItems.forEach((item, i) => {
+                const y = i * 25 + 10;
+
+                legend.append("rect")
+                    .attr("x", 0)
+                    .attr("y", y)
+                    .attr("width", 15)
+                    .attr("height", 15)
+                    .attr("fill", item.color);
+
+                legend.append("text")
+                    .attr("class", "legend-item")
+                    .attr("x", 25)
+                    .attr("y", y + 12)
+                    .text(item.label);
+            });
+
+            // Add watermark
+            addWatermark(svg, width, height);
+        }
+
+        // Load and process data
+        d3.csv("data/hotel_bookings_processed.csv")
+            .then(data => {
+                createMonthlyTrendsChart(data);
+            })
+            .catch(error => {
+                console.error("Error loading data:", error);
+                document.getElementById('loading').innerHTML = `
+                    <div class="text-red-500">
+                        <p class="font-bold">Error loading data</p>
+                        <p>Please make sure the CSV file is available at the correct path:</p>
+                        <p class="font-mono bg-gray-100 p-2 mt-2">hotel_booking_data/hotel_bookings_processed.csv</p>
+                    </div>`;
+            });
+    </script>
+</body>
+
+</html>
