@@ -6,146 +6,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analisis Pembatalan Pemesanan Hotel</title>
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.js"></script>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f9f9f9;
-        }
-
-        .container {
-            width: 95%;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        h1 {
-            text-align: center;
-            font-weight: bold;
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .subtitle {
-            text-align: center;
-            font-style: italic;
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            color: #555;
-        }
-
-        .chart-container {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-            padding: 20px;
-            position: relative;
-        }
-
-        .back-link {
-            display: inline-block;
-            margin-bottom: 20px;
-            padding: 8px 16px;
-            background-color: #3b82f6;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-
-        .back-link:hover {
-            background-color: #2563eb;
-        }
-
-        .grid line {
-            stroke: #e0e0e0;
-            stroke-opacity: 0.7;
-        }
-
-        .tooltip {
-            position: absolute;
-            padding: 8px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            border-radius: 4px;
-            pointer-events: none;
-            font-size: 12px;
-        }
-
-        .watermark {
-            position: absolute;
-            font-size: 40px;
-            color: rgba(200, 200, 200, 0.05);
-            transform: rotate(30deg);
-            pointer-events: none;
-            user-select: none;
-        }
-
-        .caption-box {
-            fill: #F0F0F0;
-            opacity: 0.7;
-            rx: 8;
-            ry: 8;
-        }
-
-        .chart-caption {
-            font-size: 10px;
-            text-anchor: middle;
-        }
-
-        /* Legend styling */
-        .legend-box {
-            fill: white;
-            stroke: #ddd;
-            stroke-width: 1;
-            rx: 4;
-            ry: 4;
-        }
-
-        .legend-title {
-            font-size: 10px;
-            font-weight: bold;
-        }
-
-        .legend-item {
-            font-size: 9px;
-        }
-
-        /* Pie chart styling */
-        .pie-slice {
-            stroke: white;
-            stroke-width: 2;
-        }
-    </style>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
     <div class="container">
-        <a href="index.html" class="back-link">← Back to Home</a>
+        <a href="index.html" class="link-button inline-block mb-6">← Kembali ke Beranda</a>
 
-        <h1>Analisis Pembatalan Pemesanan Hotel</h1>
-        <div class="subtitle">Faktor-faktor yang Memengaruhi Tingkat Pembatalan</div>
+        <h1 class="text-2xl font-bold mb-2 text-center">Analisis Pembatalan Pemesanan Hotel</h1>
+        <h2 class="text-lg mb-6 text-center text-gray-600 italic">Faktor-faktor yang Memengaruhi Tingkat Pembatalan</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="chart-container">
-                <h3 class="text-lg font-bold mb-2">Persentase Pembatalan Pemesanan</h3>
-                <div id="pie-chart"></div>
+                <h3 class="text-lg font-bold mb-4">Persentase Pembatalan Pemesanan</h3>
+                <div id="pie-chart" class="h-64"></div>
             </div>
 
             <div class="chart-container">
-                <h3 class="text-lg font-bold mb-2">Persentase Pembatalan berdasarkan Jenis Hotel</h3>
-                <div id="hotel-chart"></div>
+                <h3 class="text-lg font-bold mb-4">Persentase Pembatalan berdasarkan Jenis Hotel</h3>
+                <div id="hotel-chart" class="h-64"></div>
             </div>
 
             <div class="chart-container">
-                <h3 class="text-lg font-bold mb-2">Persentase Pembatalan berdasarkan Lead Time</h3>
-                <div id="lead-time-chart"></div>
+                <h3 class="text-lg font-bold mb-4">Persentase Pembatalan berdasarkan Lead Time</h3>
+                <div id="lead-time-chart" class="h-64"></div>
             </div>
 
             <div class="chart-container">
-                <h3 class="text-lg font-bold mb-2">Persentase Pembatalan berdasarkan Tipe Deposit</h3>
-                <div id="deposit-chart"></div>
+                <h3 class="text-lg font-bold mb-4">Persentase Pembatalan berdasarkan Tipe Deposit</h3>
+                <div id="deposit-chart" class="h-64"></div>
             </div>
         </div>
 
@@ -161,25 +51,42 @@
                 <p id="caption-text" class="text-sm"></p>
             </div>
         </div>
+
+        <div id="loading" class="text-center p-6 my-4">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+            <p class="mt-4 text-gray-600">Memuat data...</p>
+        </div>
+
+        <div class="mt-8 bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-bold mb-3">Insight</h2>
+            <div id="insight" class="text-gray-700">
+                <p><span class="font-semibold">1.</span> <span id="cancel-percentage"
+                        class="font-semibold text-red-600"></span>% dari total pemesanan dibatalkan, menunjukkan tingkat
+                    pembatalan yang cukup tinggi.</p>
+                <p><span class="font-semibold">2.</span> City Hotel memiliki tingkat pembatalan lebih tinggi (<span
+                        id="city-cancel" class="font-semibold text-red-600"></span>%) dibandingkan Resort Hotel (<span
+                        id="resort-cancel" class="font-semibold text-red-600"></span>%).</p>
+                <p><span class="font-semibold">3.</span> Terdapat korelasi positif antara lead time dan tingkat
+                    pembatalan. Pemesanan dengan lead time <span id="highest-lead-time" class="font-semibold"></span>
+                    memiliki tingkat pembatalan tertinggi (<span id="lead-time-percent"
+                        class="font-semibold text-red-600"></span>%).</p>
+                <p><span class="font-semibold">4.</span> Pemesanan dengan tipe deposit '<span id="highest-deposit"
+                        class="font-semibold"></span>' memiliki tingkat pembatalan sangat tinggi (<span
+                        id="deposit-percent" class="font-semibold text-red-600"></span>%), meskipun jumlahnya relatif
+                    kecil.</p>
+                <p><span class="font-semibold">5.</span> Tingkat pembatalan untuk tipe deposit lainnya: <span
+                        id="other-deposits" class="font-semibold"></span>.</p>
+                <p><span class="font-semibold">6.</span> Tingkat pembatalan yang tinggi dapat berdampak signifikan pada
+                    pendapatan hotel dan perencanaan kapasitas.</p>
+                <p><span class="font-semibold">7.</span> Strategi manajemen pembatalan yang lebih efektif diperlukan
+                    terutama untuk pemesanan dengan lead time panjang.</p>
+            </div>
+        </div>
     </div>
 
     <script>
         // Set main colors to match Python visualization
         const main_colors = ["#2C7BB6", "#D7191C", "#1A9641", "#FDAE61", "#FFFFBF", "#9E0142", "#A6761D", "#666666"];
-
-        // Create tooltip div
-        const tooltip = d3.select("body").append("div")
-            .attr("class", "tooltip")
-            .style("opacity", 0);
-
-        // Add watermark to each chart container
-        d3.selectAll(".chart-container").append("div")
-            .attr("class", "watermark")
-            .style("position", "absolute")
-            .style("top", "50%")
-            .style("left", "50%")
-            .style("transform", "translate(-50%, -50%) rotate(30deg)")
-            .text("Analisis Data Hotel Booking");
 
         // Format number with thousands separator
         function formatNumber(num) {
@@ -189,52 +96,56 @@
         // Function to create horizontal bar chart
         function createHorizontalBarChart(containerId, data, colorScale) {
             // Chart dimensions
-            const margin = { top: 20, right: 120, bottom: 40, left: 180 };
-            const width = document.getElementById(containerId).clientWidth - margin.left - margin.right;
-            const height = 260 - margin.top - margin.bottom;
+            const container = document.getElementById(containerId);
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            const margin = { top: 20, right: 120, bottom: 30, left: 160 };
+            const innerWidth = width - margin.left - margin.right;
+            const innerHeight = height - margin.top - margin.bottom;
 
             // Create SVG
             const svg = d3.select(`#${containerId}`)
                 .append("svg")
-                .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
-                .append("g")
+                .attr("width", width)
+                .attr("height", height);
+
+            const g = svg.append("g")
                 .attr("transform", `translate(${margin.left},${margin.top})`);
 
             // Create scales
             const xScale = d3.scaleLinear()
-                .domain([0, d3.max(data, d => d.value) * 1.1])
-                .range([0, width]);
+                .domain([0, d3.max(data, d => d.value) * 1.05])
+                .range([0, innerWidth]);
 
             const yScale = d3.scaleBand()
                 .domain(data.map(d => d.category))
-                .range([0, height])
+                .range([0, innerHeight])
                 .padding(0.3);
 
             // Add axes
-            svg.append("g")
+            g.append("g")
                 .attr("class", "x-axis")
-                .attr("transform", `translate(0,${height})`)
-                .call(d3.axisBottom(xScale).ticks(5))
+                .attr("transform", `translate(0,${innerHeight})`)
+                .call(d3.axisBottom(xScale).ticks(5).tickFormat(d => d + "%"))
                 .call(g => g.select(".domain").remove());
 
-            svg.append("g")
+            g.append("g")
                 .attr("class", "y-axis")
                 .call(d3.axisLeft(yScale))
                 .call(g => g.select(".domain").remove());
 
             // Add gridlines
-            svg.append("g")
+            g.append("g")
                 .attr("class", "grid")
                 .call(d3.axisBottom(xScale)
                     .ticks(5)
-                    .tickSize(-height)
+                    .tickSize(-innerHeight)
                     .tickFormat("")
                 )
                 .call(g => g.select(".domain").remove());
 
             // Add bars
-            const bars = svg.selectAll(".bar")
+            const bars = g.selectAll(".bar")
                 .data(data)
                 .enter()
                 .append("rect")
@@ -248,7 +159,7 @@
                 .attr("stroke-width", 1);
 
             // Add label for each bar
-            svg.selectAll(".bar-label")
+            g.selectAll(".bar-label")
                 .data(data)
                 .enter()
                 .append("text")
@@ -256,32 +167,25 @@
                 .attr("x", d => xScale(d.value) + 5)
                 .attr("y", d => yScale(d.category) + yScale.bandwidth() / 2)
                 .attr("dy", ".35em")
-                .style("font-size", "11px")
+                .style("font-size", "10px")
                 .text(d => `${d.value.toFixed(1)}% (${formatNumber(d.count)})`);
-
-            // Add x-axis label
-            svg.append("text")
-                .attr("class", "x-axis-label")
-                .attr("x", width / 2)
-                .attr("y", height + margin.bottom - 5)
-                .attr("text-anchor", "middle")
-                .style("font-size", "12px")
-                .text("Persentase Pembatalan (%)");
         }
 
         // Function to create pie chart
         function createPieChart(containerId, data) {
             // Chart dimensions
-            const width = document.getElementById(containerId).clientWidth;
-            const height = 300;
+            const container = document.getElementById(containerId);
+            const width = container.clientWidth;
+            const height = container.clientHeight;
             const radius = Math.min(width, height) / 2 - 40;
 
             // Create SVG
             const svg = d3.select(`#${containerId}`)
                 .append("svg")
                 .attr("width", width)
-                .attr("height", height)
-                .append("g")
+                .attr("height", height);
+
+            const g = svg.append("g")
                 .attr("transform", `translate(${width / 2},${height / 2})`);
 
             // Define colors
@@ -303,25 +207,18 @@
                 .outerRadius(radius);
 
             // Create pie slices
-            const slices = svg.selectAll(".slice")
+            const slices = g.selectAll(".slice")
                 .data(pie(data))
                 .enter()
                 .append("g")
                 .attr("class", "slice");
 
             slices.append("path")
-                .attr("d", (d, i) => {
-                    if (i === 1) { // Explode the canceled slice
-                        const centroid = arc.centroid(d);
-                        const x = centroid[0] * 0.1;
-                        const y = centroid[1] * 0.1;
-                        return explodedArc.centroid(d)[0] === 0 ? arc(d) : arc(d);
-                    } else {
-                        return arc(d);
-                    }
-                })
+                .attr("d", arc)
                 .attr("class", "pie-slice")
                 .attr("fill", (d, i) => colors[i])
+                .attr("stroke", "white")
+                .attr("stroke-width", 2)
                 .attr("transform", (d, i) => {
                     if (i === 1) { // Explode the canceled slice
                         const centroid = arc.centroid(d);
@@ -336,170 +233,160 @@
             slices.append("text")
                 .attr("transform", d => {
                     const pos = arc.centroid(d);
-                    const x = pos[0];
-                    const y = pos[1];
-                    const h = Math.sqrt(x * x + y * y);
-                    const labelRadius = radius * 0.7;
-                    return `translate(${(x / h) * labelRadius},${(y / h) * labelRadius})`;
+                    return `translate(${pos[0]},${pos[1]})`;
                 })
                 .attr("dy", ".35em")
                 .attr("text-anchor", "middle")
                 .style("font-size", "12px")
                 .style("font-weight", "bold")
+                .style("fill", "white")
                 .text(d => `${d.data.label} (${d.data.value.toFixed(1)}%)`);
-
-            // Add legend
-            const legend = svg.selectAll(".legend")
-                .data(data)
-                .enter()
-                .append("g")
-                .attr("class", "legend")
-                .attr("transform", (d, i) => `translate(-${radius - 20},${radius + 20 + i * 20})`);
-
-            legend.append("rect")
-                .attr("width", 16)
-                .attr("height", 16)
-                .attr("fill", (d, i) => colors[i]);
-
-            legend.append("text")
-                .attr("x", 24)
-                .attr("y", 12)
-                .style("font-size", "12px")
-                .text(d => `${d.label} (${d.value.toFixed(1)}%)`);
         }
 
         // Load and process data
-        d3.csv("data/hotel_bookings_processed.csv").then(data => {
-            // ---- PREPARE DATA ----
+        d3.csv("data/hotel_bookings_processed.csv")
+            .then(data => {
+                // Hide loading indicator
+                document.getElementById('loading').style.display = 'none';
 
-            // 1. Cancellation counts overall
-            const cancellationCounts = d3.rollup(
-                data,
-                v => v.length,
-                d => +d.is_canceled
-            );
+                // ---- PREPARE DATA ----
 
-            const cancellationTotal = Array.from(cancellationCounts.values()).reduce((a, b) => a + b, 0);
-            const cancellationPercentages = Array.from(cancellationCounts.entries()).map(([status, count]) => ({
-                label: status === "0" ? "Tidak Dibatalkan" : "Dibatalkan",
-                value: (count / cancellationTotal) * 100,
-                count: count
-            }));
+                // 1. Cancellation counts overall
+                const cancellationCounts = d3.rollup(
+                    data,
+                    v => v.length,
+                    d => +d.is_canceled
+                );
 
-            // Sort to ensure "Tidak Dibatalkan" is first, "Dibatalkan" is second
-            cancellationPercentages.sort((a, b) => {
-                if (a.label === "Tidak Dibatalkan") return -1;
-                if (b.label === "Tidak Dibatalkan") return 1;
-                return 0;
-            });
+                const cancellationTotal = Array.from(cancellationCounts.values()).reduce((a, b) => a + b, 0);
+                const cancellationPercentages = Array.from(cancellationCounts.entries()).map(([status, count]) => ({
+                    label: status === "0" ? "Tidak Dibatalkan" : "Dibatalkan",
+                    value: (count / cancellationTotal) * 100,
+                    count: count
+                }));
 
-            // 2. Cancellation by hotel type
-            const hotelTypeCounts = d3.rollup(
-                data,
-                v => ({
-                    total: v.length,
-                    canceled: v.filter(d => +d.is_canceled === 1).length
-                }),
-                d => d.hotel
-            );
+                // Sort to ensure "Tidak Dibatalkan" is first, "Dibatalkan" is second
+                cancellationPercentages.sort((a, b) => {
+                    if (a.label === "Tidak Dibatalkan") return -1;
+                    if (b.label === "Tidak Dibatalkan") return 1;
+                    return 0;
+                });
 
-            const hotelTypeData = Array.from(hotelTypeCounts.entries()).map(([hotel, counts]) => ({
-                category: hotel,
-                value: (counts.canceled / counts.total) * 100,
-                count: counts.canceled
-            }));
+                // 2. Cancellation by hotel type
+                const hotelTypeCounts = d3.rollup(
+                    data,
+                    v => ({
+                        total: v.length,
+                        canceled: v.filter(d => +d.is_canceled === 1).length
+                    }),
+                    d => d.hotel
+                );
 
-            // Sort by cancellation rate
-            hotelTypeData.sort((a, b) => a.value - b.value);
+                const hotelTypeData = Array.from(hotelTypeCounts.entries()).map(([hotel, counts]) => ({
+                    category: hotel,
+                    value: (counts.canceled / counts.total) * 100,
+                    count: counts.canceled
+                }));
 
-            // 3. Cancellation by lead time
-            const leadTimeCounts = d3.rollup(
-                data,
-                v => ({
-                    total: v.length,
-                    canceled: v.filter(d => +d.is_canceled === 1).length
-                }),
-                d => d.lead_time_group
-            );
+                // Sort by cancellation rate
+                hotelTypeData.sort((a, b) => a.value - b.value);
 
-            let leadTimeData = Array.from(leadTimeCounts.entries()).map(([leadTime, counts]) => ({
-                category: leadTime,
-                value: (counts.canceled / counts.total) * 100,
-                count: counts.canceled
-            }));
+                // 3. Cancellation by lead time
+                const leadTimeCounts = d3.rollup(
+                    data,
+                    v => ({
+                        total: v.length,
+                        canceled: v.filter(d => +d.is_canceled === 1).length
+                    }),
+                    d => d.lead_time_group
+                );
 
-            // Sort by lead time order
-            const leadTimeOrder = ["0-7 hari", "8-30 hari", "31-90 hari", "91-180 hari", "181-365 hari", ">365 hari"];
-            leadTimeData.sort((a, b) => {
-                return leadTimeOrder.indexOf(a.category) - leadTimeOrder.indexOf(b.category);
-            });
+                let leadTimeData = Array.from(leadTimeCounts.entries()).map(([leadTime, counts]) => ({
+                    category: leadTime,
+                    value: (counts.canceled / counts.total) * 100,
+                    count: counts.canceled
+                }));
 
-            // Sorting lead time data by cancellation rate for visualization
-            leadTimeData.sort((a, b) => a.value - b.value);
+                // Sort by cancellation rate
+                leadTimeData.sort((a, b) => a.value - b.value);
 
-            // 4. Cancellation by deposit type
-            const depositTypeCounts = d3.rollup(
-                data,
-                v => ({
-                    total: v.length,
-                    canceled: v.filter(d => +d.is_canceled === 1).length
-                }),
-                d => d.deposit_type
-            );
+                // 4. Cancellation by deposit type
+                const depositTypeCounts = d3.rollup(
+                    data,
+                    v => ({
+                        total: v.length,
+                        canceled: v.filter(d => +d.is_canceled === 1).length
+                    }),
+                    d => d.deposit_type
+                );
 
-            const depositTypeData = Array.from(depositTypeCounts.entries()).map(([depositType, counts]) => ({
-                category: depositType,
-                value: (counts.canceled / counts.total) * 100,
-                count: counts.canceled
-            }));
+                const depositTypeData = Array.from(depositTypeCounts.entries()).map(([depositType, counts]) => ({
+                    category: depositType,
+                    value: (counts.canceled / counts.total) * 100,
+                    count: counts.canceled
+                }));
 
-            // Sort by cancellation rate
-            depositTypeData.sort((a, b) => a.value - b.value);
+                // Sort by cancellation rate
+                depositTypeData.sort((a, b) => a.value - b.value);
 
-            // ---- CREATE VISUALIZATIONS ----
+                // ---- CREATE VISUALIZATIONS ----
 
-            // Create color scale for bar charts
-            const colorScale = d3.scaleSequential()
-                .domain([0, 100])
-                .interpolator(d3.interpolateReds);
+                // Create color scale for bar charts
+                const colorScale = d3.scaleSequential()
+                    .domain([0, 100])
+                    .interpolator(d3.interpolateReds);
 
-            // 1. Create pie chart for overall cancellation
-            createPieChart("pie-chart", cancellationPercentages);
+                // 1. Create pie chart for overall cancellation
+                createPieChart("pie-chart", cancellationPercentages);
 
-            // 2. Create horizontal bar chart for hotel types
-            createHorizontalBarChart("hotel-chart", hotelTypeData, colorScale);
+                // 2. Create horizontal bar chart for hotel types
+                createHorizontalBarChart("hotel-chart", hotelTypeData, colorScale);
 
-            // 3. Create horizontal bar chart for lead time
-            createHorizontalBarChart("lead-time-chart", leadTimeData, colorScale);
+                // 3. Create horizontal bar chart for lead time
+                createHorizontalBarChart("lead-time-chart", leadTimeData, colorScale);
 
-            // 4. Create horizontal bar chart for deposit types
-            createHorizontalBarChart("deposit-chart", depositTypeData, colorScale);
+                // 4. Create horizontal bar chart for deposit types
+                createHorizontalBarChart("deposit-chart", depositTypeData, colorScale);
 
-            // Generate caption
-            const canceledPercentage = cancellationPercentages.find(d => d.label === "Dibatalkan").value.toFixed(1);
-            const cityHotelRate = hotelTypeData.find(d => d.category === "City Hotel").value.toFixed(1);
-            const resortHotelRate = hotelTypeData.find(d => d.category === "Resort Hotel").value.toFixed(1);
+                // Generate caption
+                const canceledPercentage = cancellationPercentages.find(d => d.label === "Dibatalkan").value.toFixed(1);
+                const cityHotelRate = hotelTypeData.find(d => d.category === "City Hotel").value.toFixed(1);
+                const resortHotelRate = hotelTypeData.find(d => d.category === "Resort Hotel").value.toFixed(1);
 
-            // Find highest cancellation rate for lead time
-            const highestLeadTime = leadTimeData.slice().sort((a, b) => b.value - a.value)[0];
+                // Find highest cancellation rate for lead time
+                const highestLeadTime = leadTimeData.slice().sort((a, b) => b.value - a.value)[0];
 
-            // Find highest cancellation rate for deposit type
-            const highestDepositType = depositTypeData.slice().sort((a, b) => b.value - a.value)[0];
+                // Find highest cancellation rate for deposit type
+                const highestDepositType = depositTypeData.slice().sort((a, b) => b.value - a.value)[0];
 
-            const caption = `${canceledPercentage}% dari total pemesanan dibatalkan. City Hotel memiliki tingkat pembatalan lebih tinggi (${cityHotelRate}%) dibandingkan Resort Hotel (${resortHotelRate}%). Pemesanan dengan lead time ${highestLeadTime.category} memiliki tingkat pembatalan tertinggi (${highestLeadTime.value.toFixed(1)}%). Pemesanan dengan tipe deposit '${highestDepositType.category}' memiliki tingkat pembatalan tertinggi (${highestDepositType.value.toFixed(1)}%).`;
+                const caption = `${canceledPercentage}% dari total pemesanan dibatalkan. City Hotel memiliki tingkat pembatalan lebih tinggi (${cityHotelRate}%) dibandingkan Resort Hotel (${resortHotelRate}%). Pemesanan dengan lead time ${highestLeadTime.category} memiliki tingkat pembatalan tertinggi (${highestLeadTime.value.toFixed(1)}%). Pemesanan dengan tipe deposit '${highestDepositType.category}' memiliki tingkat pembatalan tertinggi (${highestDepositType.value.toFixed(1)}%).`;
 
-            document.getElementById("caption-text").textContent = caption;
-        }).catch(error => {
-            console.error("Error loading or processing data:", error);
-            document.querySelectorAll(".chart-container").forEach(container => {
-                container.innerHTML = `
+                document.getElementById("caption-text").textContent = caption;
+
+                // Update insights
+                document.getElementById('cancel-percentage').textContent = canceledPercentage;
+                document.getElementById('city-cancel').textContent = cityHotelRate;
+                document.getElementById('resort-cancel').textContent = resortHotelRate;
+                document.getElementById('highest-lead-time').textContent = highestLeadTime.category;
+                document.getElementById('lead-time-percent').textContent = highestLeadTime.value.toFixed(1);
+                document.getElementById('highest-deposit').textContent = highestDepositType.category;
+                document.getElementById('deposit-percent').textContent = highestDepositType.value.toFixed(1);
+
+                // Prepare string of other deposit types
+                const otherDeposits = depositTypeData
+                    .filter(d => d.category !== highestDepositType.category)
+                    .map(d => `'${d.category}' (${d.value.toFixed(1)}%)`)
+                    .join(', ');
+
+                document.getElementById('other-deposits').textContent = otherDeposits;
+            }).catch(error => {
+                console.error("Error loading or processing data:", error);
+                document.getElementById('loading').innerHTML = `
                     <div class="p-4 bg-red-100 text-red-700 rounded">
                         <p>Error: Tidak dapat memuat data. Pastikan file CSV tersedia di server.</p>
                         <p>Detail: ${error.message}</p>
-                    </div>
-                `;
+                    </div>`;
             });
-        });
     </script>
 </body>
 

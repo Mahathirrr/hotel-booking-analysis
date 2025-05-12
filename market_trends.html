@@ -8,137 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <style>
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .chart-container {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        .axis line,
-        .axis path {
-            stroke: #ccc;
-        }
-
-        .grid line {
-            stroke: #eee;
-            stroke-opacity: 0.7;
-            shape-rendering: crispEdges;
-        }
-
-        .grid path {
-            stroke-width: 0;
-        }
-
-        .highlight-max {
-            fill: green;
-            opacity: 0.1;
-        }
-
-        .highlight-min {
-            fill: red;
-            opacity: 0.1;
-        }
-
-        .bar {
-            stroke: white;
-            stroke-width: 1px;
-        }
-
-        .area-fill {
-            opacity: 0.08;
-        }
-
-        .line {
-            fill: none;
-        }
-
-        .line-point {
-            stroke: white;
-            stroke-width: 1.5px;
-        }
-
-        .caption-box,
-        .ratio-box {
-            fill: #f0f0f0;
-            opacity: 0.7;
-            rx: 5;
-            ry: 5;
-        }
-
-        .legend-box {
-            fill: white;
-            opacity: 0.8;
-            rx: 5;
-            ry: 5;
-            stroke: #e0e0e0;
-            stroke-width: 1px;
-        }
-
-        .chart-title {
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .chart-subtitle {
-            font-size: 14px;
-            font-style: italic;
-        }
-
-        .chart-caption {
-            font-size: 12px;
-            fill: #555;
-        }
-
-        .axis-title {
-            font-size: 14px;
-        }
-
-        .watermark {
-            font-size: 40px;
-            fill: gray;
-            opacity: 0.05;
-        }
-
-        .legend-title {
-            font-size: 10px;
-            font-weight: bold;
-        }
-
-        .legend-item {
-            font-size: 9px;
-        }
-
-        .value-label {
-            font-size: 11px;
-            font-weight: bold;
-            fill: #444;
-            text-anchor: middle;
-        }
-
-        .link-button {
-            display: inline-block;
-            padding: 8px 16px;
-            background-color: #2C7BB6;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            font-weight: 500;
-            transition: background-color 0.2s;
-        }
-
-        .link-button:hover {
-            background-color: #1f5a87;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body class="bg-gray-100">
@@ -423,9 +293,6 @@
                 .attr("text-anchor", "middle")
                 .text("Tren Jumlah Pemesanan Hotel Setiap Bulan");
 
-            // Add caption
-            const caption = `Tren pemesanan hotel menunjukkan pola musiman dengan puncak di ${maxMonth.month} (${formatNumber(maxValue)} pemesanan) dan terendah di ${minMonth.month} (${formatNumber(minValue)} pemesanan). City Hotel secara konsisten lebih populer dibandingkan Resort Hotel.`;
-
             // Add a background rectangle for the caption
             const captionY = height - 60;
             const captionText = svg.append("text")
@@ -519,8 +386,8 @@
                     .text(item.label);
             });
 
-            // Add watermark
-            addWatermark(svg, width, height);
+            // Add watermark - but removed in the Python version
+            // addWatermark(svg, width, height);
         }
 
         // Load and process data
@@ -534,7 +401,7 @@
                     <div class="text-red-500">
                         <p class="font-bold">Error loading data</p>
                         <p>Please make sure the CSV file is available at the correct path:</p>
-                        <p class="font-mono bg-gray-100 p-2 mt-2">hotel_booking_data/hotel_bookings_processed.csv</p>
+                        <p class="font-mono bg-gray-100 p-2 mt-2">data/hotel_bookings_processed.csv</p>
                     </div>`;
             });
     </script>

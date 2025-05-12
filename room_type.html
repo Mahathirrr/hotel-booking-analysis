@@ -120,14 +120,6 @@
             flex-wrap: wrap;
             justify-content: center;
         }
-
-        #debug-info {
-            padding: 10px;
-            margin: 10px 0;
-            background-color: #ffffcc;
-            border: 1px solid #e6e600;
-            border-radius: 4px;
-        }
     </style>
 </head>
 
@@ -139,8 +131,6 @@
         <div id="loading" class="text-center p-10">
             <p>Memuat data...</p>
         </div>
-        <!-- Div untuk menampilkan info debug jika terjadi error -->
-        <div id="debug-info" class="hidden"></div>
     </div>
 
     <script>
@@ -151,27 +141,6 @@
 
         // Warna dari proyek Python
         const main_colors = ["#2C7BB6", "#D7191C", "#1A9641", "#FDAE61", "#FFFFBF", "#9E0142", "#A6761D", "#666666"];
-
-        // Toggle untuk debug info
-        const DEBUG = true;
-
-        // Fungsi untuk menampilkan debug info
-        function showDebugInfo(message, data = null) {
-            if (!DEBUG) return;
-
-            const debugDiv = document.getElementById("debug-info");
-            debugDiv.classList.remove("hidden");
-
-            const timestamp = new Date().toLocaleTimeString();
-            let content = `<p>[${timestamp}] ${message}</p>`;
-
-            if (data) {
-                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-            }
-
-            // Tambahkan ke awal div
-            debugDiv.innerHTML = content + debugDiv.innerHTML;
-        }
 
         // Fungsi untuk menambahkan watermark
         function addWatermark(svg, width, height) {
@@ -190,17 +159,13 @@
 
         // Fungsi untuk menggabungkan kategori kecil
         function combineSmallCategories(data, threshold = 0.05, name = 'Others') {
-            // PERBAIKAN: Tambahkan pengecekkan data kosong
             if (!data || data.length === 0) {
-                showDebugInfo("Data kosong di combineSmallCategories");
                 return [];
             }
 
             const total = d3.sum(data, d => d.value);
 
-            // PERBAIKAN: Tangani jika total adalah 0
             if (total === 0) {
-                showDebugInfo("Total 0 di combineSmallCategories");
                 return data;
             }
 
@@ -233,9 +198,6 @@
         d3.csv("data/hotel_bookings_processed.csv").then(function (data) {
             document.getElementById("loading").style.display = "none";
 
-            // PERBAIKAN: Debug info
-            showDebugInfo("Data berhasil dimuat", { rows: data.length, sampleColumns: Object.keys(data[0]).slice(0, 5) });
-
             // Memproses data untuk visualisasi tipe kamar
             const roomTypeCounts = d3.rollup(
                 data,
@@ -243,24 +205,17 @@
                 d => d.reserved_room_type
             );
 
-            showDebugInfo("Room type counts", Array.from(roomTypeCounts.entries()));
-
             // Konversi ke array untuk visualisasi
             let roomTypeData = Array.from(roomTypeCounts, ([key, value]) => ({ key, value }));
 
-            // PERBAIKAN: Hitung persentase secara terpisah untuk memastikan properti percentage ada
+            // Hitung persentase
             const totalRoomTypes = d3.sum(roomTypeData, d => d.value);
             roomTypeData.forEach(d => {
                 d.percentage = (d.value / totalRoomTypes) * 100;
             });
 
-            showDebugInfo("Room type data dengan percentage", roomTypeData);
-
             // Gabungkan kategori kecil
             roomTypeData = combineSmallCategories(roomTypeData);
-
-            // PERBAIKAN: Tambahkan debug untuk roomTypeData setelah kombinasi
-            showDebugInfo("Room type data setelah kombinasi kategori kecil", roomTypeData);
 
             // Hitung kecocokan tipe kamar
             const roomMatchCounts = d3.rollup(
@@ -268,8 +223,6 @@
                 v => v.length,
                 d => d.room_type_match === "1" || d.room_type_match === "true"
             );
-
-            showDebugInfo("Room match counts", Array.from(roomMatchCounts.entries()));
 
             // Hitung upgrade vs downgrade
             let upgrades = 0;
@@ -303,21 +256,17 @@
                 });
             }
 
-            showDebugInfo("Upgrade/downgrade counts", { upgrades, downgrades });
-
             // Konversi ke array untuk pie chart 1
             const roomMatchData = [
                 { key: true, value: roomMatchCounts.get(true) || 0, label: "Sesuai" },
                 { key: false, value: roomMatchCounts.get(false) || 0, label: "Tidak Sesuai" }
             ];
 
-            // PERBAIKAN: Hitung persentase
+            // Hitung persentase
             const totalRoomMatches = d3.sum(roomMatchData, d => d.value);
             roomMatchData.forEach(d => {
                 d.percentage = (d.value / totalRoomMatches) * 100;
             });
-
-            showDebugInfo("Room match data dengan percentage", roomMatchData);
 
             // Data untuk pie chart 2
             const upgradeDowngradeData = [
@@ -325,13 +274,11 @@
                 { key: "Downgrade", value: downgrades }
             ];
 
-            // PERBAIKAN: Hitung persentase
+            // Hitung persentase
             const totalChanges = upgrades + downgrades;
             upgradeDowngradeData.forEach(d => {
                 d.percentage = totalChanges > 0 ? (d.value / totalChanges) * 100 : 0;
             });
-
-            showDebugInfo("Upgrade/downgrade data dengan percentage", upgradeDowngradeData);
 
             // Membuat container untuk ketiga chart
             const container = d3.select("#visualization");
@@ -340,39 +287,28 @@
             const barChartContainer = container.append("div")
                 .attr("class", "chart-container");
 
-            showDebugInfo("Bar chart container dibuat");
-
             const pieChart1Container = container.append("div")
                 .attr("class", "chart-container");
-
-            showDebugInfo("Pie chart 1 container dibuat");
 
             const pieChart2Container = container.append("div")
                 .attr("class", "chart-container");
 
-            showDebugInfo("Pie chart 2 container dibuat");
-
             try {
                 // 1. Membuat horizontal bar chart
                 createBarChart(barChartContainer, roomTypeData);
-                showDebugInfo("Bar chart berhasil dibuat");
 
                 // 2. Membuat pie chart untuk room match
                 createPieChart(pieChart1Container, roomMatchData, "Kecocokan Tipe Kamar yang Dipesan vs Diberikan", [main_colors[2], main_colors[1]], true);
-                showDebugInfo("Pie chart 1 berhasil dibuat");
 
                 // 3. Membuat pie chart untuk upgrade vs downgrade
                 if (totalChanges > 0) {
                     createPieChart(pieChart2Container, upgradeDowngradeData, "Distribusi Upgrade vs Downgrade\n(untuk kamar yang tidak sesuai)", [main_colors[2], main_colors[1]], false);
-                    showDebugInfo("Pie chart 2 berhasil dibuat");
                 } else {
                     pieChart2Container.append("div")
                         .attr("class", "p-5 text-center text-gray-500")
                         .text("Tidak ada data upgrade/downgrade yang tersedia");
-                    showDebugInfo("Tidak ada data untuk pie chart 2");
                 }
             } catch (error) {
-                showDebugInfo("Error saat membuat chart: " + error.message);
                 console.error("Error creating charts:", error);
             }
 
@@ -386,9 +322,7 @@
                         ${((roomMatchCounts.get(false) || 0) / (totalRoomTypes) * 100).toFixed(1)}% tamu mendapatkan tipe kamar yang berbeda dari yang mereka pesan,
                         ${totalChanges > 0 ? `dengan ${(upgrades / (totalChanges) * 100).toFixed(1)}% mendapatkan upgrade dan ${(downgrades / (totalChanges) * 100).toFixed(1)}% mendapatkan downgrade.` : 'namun tidak ada data tentang upgrade/downgrade.'}
                     </p>`);
-                showDebugInfo("Caption berhasil ditambahkan");
             } catch (error) {
-                showDebugInfo("Error saat menambahkan caption: " + error.message);
                 console.error("Error adding caption:", error);
             }
         }).catch(function (error) {
@@ -397,21 +331,18 @@
                 <p class="text-red-500">Error loading data. Please make sure the CSV file is available.</p>
                 <p class="text-sm">${error}</p>
             `;
-            showDebugInfo("Error memuat data: " + error.message);
         });
 
         // Fungsi untuk membuat horizontal bar chart
         function createBarChart(container, data) {
-            // PERBAIKAN: Periksa data
             if (!data || data.length === 0) {
                 container.append("div")
                     .attr("class", "p-5 text-center text-red-500")
                     .text("Tidak ada data untuk bar chart");
-                showDebugInfo("Tidak ada data untuk bar chart");
                 return;
             }
 
-            // PERBAIKAN: Pastikan semua data memiliki percentage
+            // Pastikan semua data memiliki percentage
             const total = d3.sum(data, d => d.value);
             data.forEach(d => {
                 if (d.percentage === undefined) {
@@ -483,7 +414,7 @@
                 .attr("width", d => xScale(d.value))
                 .attr("fill", (d, i) => colorScale(i));
 
-            // PERBAIKAN: Labels dengan pengecekkan null/undefined
+            // Labels
             g.selectAll(".label")
                 .data(data)
                 .enter()
@@ -514,16 +445,14 @@
 
         // Fungsi untuk membuat pie chart
         function createPieChart(container, data, title, colors, explodeSecond = false) {
-            // PERBAIKAN: Periksa data
             if (!data || data.length === 0 || data.every(d => !d.value)) {
                 container.append("div")
                     .attr("class", "p-5 text-center text-red-500")
                     .text("Tidak ada data untuk pie chart");
-                showDebugInfo("Tidak ada data untuk pie chart: " + title);
                 return;
             }
 
-            // PERBAIKAN: Pastikan semua data memiliki percentage
+            // Pastikan semua data memiliki percentage
             const total = d3.sum(data, d => d.value);
             if (total === 0) {
                 container.append("div")
@@ -599,7 +528,7 @@
                 .attr("stroke", "white")
                 .attr("stroke-width", 2);
 
-            // PERBAIKAN: Labels dengan pengecekkan null/undefined
+            // Labels
             arcs.append("text")
                 .attr("transform", d => `translate(${labelArc.centroid(d)})`)
                 .attr("dy", ".35em")

@@ -8,222 +8,44 @@
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
-            margin: 0;
-            padding: 0;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #333;
-            font-weight: bold;
-        }
-
-        .back-link {
-            display: inline-block;
-            margin-bottom: 20px;
-            color: #2C7BB6;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .back-link:hover {
-            text-decoration: underline;
-        }
-
-        #visualization {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .chart-title {
-            font-size: 16px;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .axis line,
-        .axis path {
-            stroke: #ccc;
-            stroke-width: 1;
-            shape-rendering: crispEdges;
-        }
-
-        .grid line {
-            stroke: #eee;
-            shape-rendering: crispEdges;
-        }
-
-        .bar {
-            fill-opacity: 0.8;
-        }
-
-        .bar:hover {
-            fill-opacity: 1;
-        }
-
-        .highlight-max {
-            fill: green;
-            fill-opacity: 0.1;
-        }
-
-        .highlight-min {
-            fill: red;
-            fill-opacity: 0.1;
-        }
-
-        .area-fill {
-            fill-opacity: 0.08;
-        }
-
-        .line {
-            fill: none;
-            stroke-width: 2.5;
-        }
-
-        .line-point {
-            stroke-width: 1.5;
-            stroke: white;
-        }
-
-        .label {
-            font-size: 9px;
-            text-anchor: middle;
-        }
-
-        .legend-box {
-            fill: white;
-            stroke: #ddd;
-            stroke-width: 1px;
-            rx: 4;
-            ry: 4;
-            fill-opacity: 0.8;
-        }
-
-        .legend-title {
-            font-size: 10px;
-            font-weight: bold;
-        }
-
-        .legend-item {
-            font-size: 9px;
-            alignment-baseline: middle;
-        }
-
-        .caption-box,
-        .ratio-box {
-            fill: white;
-            stroke: #ddd;
-            stroke-width: 1px;
-            rx: 4;
-            ry: 4;
-            fill-opacity: 0.7;
-        }
-
-        .chart-caption {
-            font-size: 10px;
-            text-anchor: middle;
-        }
-
-        .watermark {
-            font-size: 40px;
-            fill: gray;
-            fill-opacity: 0.05;
-            text-anchor: middle;
-            alignment-baseline: middle;
-            transform: rotate(-30deg);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 8px;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
-
-        th {
-            background-color: #4472C4;
-            color: white;
-        }
-
-        tr:nth-child(even) {
-            background-color: #D9E1F2;
-        }
-
-        tr:nth-child(odd) {
-            background-color: #E9EDF4;
-        }
-
-        .grid-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 1fr 1.2fr;
-            gap: 20px;
-            height: 800px;
-        }
-
-        .grid-item-full {
-            grid-column: 1 / span 2;
-        }
-
-        .region-pie-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .country-info-table {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
     <div class="container">
         <h1 class="text-2xl font-bold mb-6">Analisis Negara Asal Tamu Hotel</h1>
-        <a href="index.html" class="back-link">← Kembali ke Beranda</a>
+        <a href="index.html" class="link-button mb-6 inline-block">← Kembali ke Beranda</a>
 
-        <div id="visualization" class="grid-container">
+        <div class="chart-container">
             <!-- Top countries bar chart will be rendered here -->
-            <div id="top-countries" class="grid-item-full"></div>
-
-            <!-- Region pie chart -->
-            <div id="region-pie" class="region-pie-container"></div>
-
-            <!-- Country information table -->
-            <div id="country-info-table" class="country-info-table"></div>
+            <div id="top-countries" class="w-full h-96"></div>
         </div>
 
-        <div id="insights" class="bg-white rounded-lg shadow p-4 mb-4">
-            <h2 class="text-lg font-bold mb-2">Insight: Negara Asal Tamu</h2>
-            <ol class="list-decimal pl-8">
-                <li>Portugal (PRT) merupakan negara asal tamu terbanyak dengan 40.7% dari total pemesanan.</li>
-                <li>Inggris (GBR) merupakan negara asal tamu terbanyak kedua dengan 10.2% dari total pemesanan.</li>
-                <li>Prancis (FRA) merupakan negara asal tamu terbanyak ketiga dengan 8.7% dari total pemesanan.</li>
-                <li>Rasio pemesanan dari Portugal dibandingkan Inggris adalah 4.0 : 1.</li>
-                <li>Eropa merupakan region asal tamu terbanyak dengan 90.4% dari total pemesanan.</li>
-                <li>10 negara teratas menyumbang 84.5% dari total pemesanan.</li>
+        <div class="chart-container">
+            <!-- Region pie chart -->
+            <div id="region-pie" class="w-full h-96 flex flex-col items-center"></div>
+        </div>
+
+        <div id="loading" class="text-center p-4 my-4 bg-gray-100 rounded-lg">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+            <p class="mt-4 text-gray-600">Memuat data...</p>
+        </div>
+
+        <div class="mt-8 bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-bold mb-4">Insight: Negara Asal Tamu</h2>
+            <ol class="list-decimal pl-8 space-y-2">
+                <li>Portugal (PRT) merupakan negara asal tamu terbanyak dengan <span id="prt-percentage"
+                        class="font-semibold"></span>% dari total pemesanan.</li>
+                <li>Inggris (GBR) merupakan negara asal tamu terbanyak kedua dengan <span id="gbr-percentage"
+                        class="font-semibold"></span>% dari total pemesanan.</li>
+                <li>Prancis (FRA) merupakan negara asal tamu terbanyak ketiga dengan <span id="fra-percentage"
+                        class="font-semibold"></span>% dari total pemesanan.</li>
+                <li>Rasio pemesanan dari Portugal dibandingkan Inggris adalah <span id="prt-gbr-ratio"
+                        class="font-semibold"></span> : 1.</li>
+                <li>Eropa merupakan region asal tamu terbanyak dengan <span id="europe-percentage"
+                        class="font-semibold"></span>% dari total pemesanan.</li>
+                <li>10 negara teratas menyumbang <span id="top10-percentage" class="font-semibold"></span>% dari total
+                    pemesanan.</li>
                 <li>Tamu domestik (dari Portugal) mendominasi pemesanan, menunjukkan bahwa pasar lokal sangat penting
                     bagi hotel.</li>
             </ol>
@@ -277,17 +99,11 @@
             }].sort((a, b) => b.value - a.value);
         }
 
-        // Helper function to add watermark
-        function addWatermark(svg, width, height) {
-            svg.append("text")
-                .attr("class", "watermark")
-                .attr("x", width / 2)
-                .attr("y", height / 2)
-                .text("Analisis Data Hotel Booking");
-        }
-
         // Load data
         d3.csv("data/hotel_bookings_processed.csv").then(data => {
+            // Hide loading indicator
+            document.getElementById('loading').style.display = 'none';
+
             // Process data for country counts
             const countryCounts = d3.rollup(
                 data,
@@ -305,6 +121,18 @@
             // Calculate percentages
             const total = d3.sum(countryArray, d => d.value);
             const countryPercentage = new Map(countryArray.map(d => [d.key, (d.value / total * 100)]));
+
+            // Calculate total percentage for top 10 countries
+            const top10Total = d3.sum(topCountries, d => d.value);
+            const top10Percentage = (top10Total / total) * 100;
+
+            // Get specific country percentages
+            const prtPercentage = countryPercentage.get('PRT') || 0;
+            const gbrPercentage = countryPercentage.get('GBR') || 0;
+            const fraPercentage = countryPercentage.get('FRA') || 0;
+
+            // Calculate ratio
+            const prtGbrRatio = prtPercentage / gbrPercentage;
 
             // Process data for region counts
             const regionCounts = d3.rollup(
@@ -326,34 +154,55 @@
                 percentage: (d.value / regionTotal * 100)
             }));
 
+            // Get Europe percentage
+            const europePercentage = regionArray.find(d => d.key === 'Eropa')?.percentage || 0;
+
+            // Update insights
+            document.getElementById('prt-percentage').textContent = prtPercentage.toFixed(1);
+            document.getElementById('gbr-percentage').textContent = gbrPercentage.toFixed(1);
+            document.getElementById('fra-percentage').textContent = fraPercentage.toFixed(1);
+            document.getElementById('prt-gbr-ratio').textContent = prtGbrRatio.toFixed(1);
+            document.getElementById('europe-percentage').textContent = europePercentage.toFixed(1);
+            document.getElementById('top10-percentage').textContent = top10Percentage.toFixed(1);
+
             // Create visualizations
             createTopCountriesChart(topCountries, total);
             createRegionPieChart(regionArray);
-            createCountryInfoTable(topCountries, countryPercentage);
+        }).catch(error => {
+            console.error("Error loading data:", error);
+            document.getElementById('loading').innerHTML = `
+                <div class="text-red-500">
+                    <p class="font-bold">Error loading data</p>
+                    <p>Please make sure the CSV file is available at the correct path:</p>
+                    <p class="font-mono bg-gray-100 p-2 mt-2">data/hotel_bookings_processed.csv</p>
+                </div>`;
         });
 
         function createTopCountriesChart(data, total) {
             // Set dimensions and margins
-            const margin = { top: 50, right: 30, bottom: 30, left: 150 };
-            const width = document.getElementById('top-countries').offsetWidth - margin.left - margin.right;
-            const height = document.getElementById('top-countries').offsetHeight - margin.top - margin.bottom;
+            const margin = { top: 50, right: 80, bottom: 50, left: 220 };
+            const width = document.getElementById('top-countries').offsetWidth;
+            const height = document.getElementById('top-countries').offsetHeight;
+            const innerWidth = width - margin.left - margin.right;
+            const innerHeight = height - margin.top - margin.bottom;
 
             // Create SVG
             const svg = d3.select("#top-countries")
                 .append("svg")
-                .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
-                .append("g")
+                .attr("width", width)
+                .attr("height", height);
+
+            const g = svg.append("g")
                 .attr("transform", `translate(${margin.left},${margin.top})`);
 
             // Set up scales
             const x = d3.scaleLinear()
                 .domain([0, d3.max(data, d => d.value) * 1.1])
-                .range([0, width]);
+                .range([0, innerWidth]);
 
             const y = d3.scaleBand()
                 .domain(data.map(d => d.key))
-                .range([0, height])
+                .range([0, innerHeight])
                 .padding(0.2);
 
             // Color scale using viridis colormap (similar to Python's viridis)
@@ -361,29 +210,29 @@
                 .domain([0, data.length - 1]);
 
             // Add axes
-            svg.append("g")
-                .attr("transform", `translate(0,${height})`)
+            g.append("g")
+                .attr("transform", `translate(0,${innerHeight})`)
                 .call(d3.axisBottom(x).ticks(5).tickFormat(d => formatThousands(d)))
                 .selectAll("text")
                 .style("font-size", "10px");
 
             // Add country names instead of codes
-            svg.append("g")
+            g.append("g")
                 .call(d3.axisLeft(y).tickFormat(d => countryNames[d] || d))
                 .selectAll("text")
                 .style("font-size", "11px");
 
             // Add grid lines
-            svg.append("g")
+            g.append("g")
                 .attr("class", "grid")
                 .call(d3.axisBottom(x)
-                    .tickSize(height)
+                    .tickSize(innerHeight)
                     .tickFormat("")
                 )
                 .style("opacity", 0.3);
 
             // Add bars
-            const bars = svg.selectAll(".bar")
+            const bars = g.selectAll(".bar")
                 .data(data)
                 .enter()
                 .append("rect")
@@ -395,7 +244,7 @@
                 .attr("fill", (d, i) => colorScale(i));
 
             // Add labels to bars
-            svg.selectAll(".label")
+            g.selectAll(".label")
                 .data(data)
                 .enter()
                 .append("text")
@@ -410,7 +259,7 @@
             svg.append("text")
                 .attr("class", "chart-title")
                 .attr("x", width / 2)
-                .attr("y", -20)
+                .attr("y", 25)
                 .attr("text-anchor", "middle")
                 .style("font-size", "14px")
                 .style("font-weight", "bold")
@@ -419,7 +268,7 @@
             // Add x-axis label
             svg.append("text")
                 .attr("x", width / 2)
-                .attr("y", height + margin.bottom - 5)
+                .attr("y", height - 10)
                 .attr("text-anchor", "middle")
                 .style("font-size", "12px")
                 .text("Jumlah Pemesanan");
@@ -428,7 +277,7 @@
             svg.append("text")
                 .attr("transform", "rotate(-90)")
                 .attr("x", -height / 2)
-                .attr("y", -margin.left + 80)
+                .attr("y", margin.left - 170)
                 .attr("text-anchor", "middle")
                 .style("font-size", "12px")
                 .text("Negara");
@@ -438,14 +287,15 @@
             // Set dimensions
             const width = document.getElementById('region-pie').offsetWidth;
             const height = document.getElementById('region-pie').offsetHeight;
-            const radius = Math.min(width, height) * 0.5;
+            const radius = Math.min(width, height) * 0.4;
 
             // Create SVG
             const svg = d3.select("#region-pie")
                 .append("svg")
                 .attr("width", width)
-                .attr("height", height)
-                .append("g")
+                .attr("height", height);
+
+            const g = svg.append("g")
                 .attr("transform", `translate(${width / 2},${height / 2})`);
 
             // Create color scale
@@ -463,25 +313,22 @@
             // Calculate percentages
             const total = d3.sum(data, d => d.value);
 
-            // Create arc generator
+            // Create arc generator for pie slices
             const arc = d3.arc()
                 .innerRadius(0)
-                .outerRadius(radius - 40);
+                .outerRadius(radius);
 
-            // Generate explode array (explode first slice)
-            const explode = arcs.map((d, i) => i === 0 ? 0.1 : 0);
+            // Create arc generator for label lines
+            const outerArc = d3.arc()
+                .innerRadius(radius * 1.1)
+                .outerRadius(radius * 1.1);
 
-            // Add arcs with explode
-            const path = svg.selectAll('.arc')
+            // Add arcs
+            const path = g.selectAll('.arc')
                 .data(arcs)
                 .enter()
                 .append('g')
-                .attr('class', 'arc')
-                .attr('transform', (d, i) => {
-                    if (explode[i] === 0) return '';
-                    const centroid = arc.centroid(d);
-                    return `translate(${centroid[0] * explode[i] * 2},${centroid[1] * explode[i] * 2})`;
-                });
+                .attr('class', 'arc');
 
             path.append('path')
                 .attr('d', arc)
@@ -489,11 +336,44 @@
                 .style('stroke', 'white')
                 .style('stroke-width', '1px');
 
-            // Add labels with percentages
+            // Generate explode array (explode first slice)
+            const firstArc = path.filter((d, i) => i === 0);
+            if (firstArc.node()) {
+                const d = firstArc.datum();
+                const centroid = arc.centroid(d);
+                firstArc.attr('transform', `translate(${centroid[0] * 0.1},${centroid[1] * 0.1})`);
+            }
+
+            // Add lines for external labels
+            path.append('polyline')
+                .attr('points', function (d) {
+                    const pos = arc.centroid(d);
+                    const midAngle = Math.atan2(pos[1], pos[0]);
+                    const x1 = Math.cos(midAngle) * radius;
+                    const y1 = Math.sin(midAngle) * radius;
+                    const x2 = Math.cos(midAngle) * (radius + 30);
+                    const y2 = Math.sin(midAngle) * (radius + 30);
+                    const x3 = x2 + (midAngle > -Math.PI / 2 && midAngle < Math.PI / 2 ? 1 : -1) * 20;
+                    const y3 = y2;
+                    return [x1, y1, x2, y2, x3, y3].join(',');
+                })
+                .style('fill', 'none')
+                .style('stroke', '#999')
+                .style('stroke-width', 1);
+
+            // Add external labels
             path.append('text')
-                .attr('transform', d => `translate(${arc.centroid(d)})`)
-                .attr('text-anchor', 'middle')
-                .attr('dy', '0.35em')
+                .attr('transform', function (d) {
+                    const pos = arc.centroid(d);
+                    const midAngle = Math.atan2(pos[1], pos[0]);
+                    const x = Math.cos(midAngle) * (radius + 45);
+                    const y = Math.sin(midAngle) * (radius + 45);
+                    return `translate(${x}, ${y})`;
+                })
+                .attr('text-anchor', function (d) {
+                    const midAngle = Math.atan2(arc.centroid(d)[1], arc.centroid(d)[0]);
+                    return (midAngle < -Math.PI / 2 || midAngle > Math.PI / 2) ? "end" : "start";
+                })
                 .style('font-size', '11px')
                 .style('font-weight', 'normal')
                 .text(d => {
@@ -504,14 +384,13 @@
             // Add title
             svg.append("text")
                 .attr("class", "chart-title")
-                .attr("x", 0)
-                .attr("y", -radius - 10)
+                .attr("x", width / 2)
+                .attr("y", 25)
                 .attr("text-anchor", "middle")
                 .style("font-size", "14px")
                 .style("font-weight", "bold")
                 .text("Distribusi Pemesanan berdasarkan Region");
         }
-
     </script>
 </body>
 

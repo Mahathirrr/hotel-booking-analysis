@@ -6,87 +6,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perbandingan Pemesanan City Hotel vs Resort Hotel</title>
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .chart-container {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .watermark {
-            font-size: 40px;
-            fill: gray;
-            opacity: 0.05;
-        }
-
-        .chart-title {
-            font-size: 16px;
-            font-weight: bold;
-        }
-
-        .chart-subtitle {
-            font-size: 12px;
-            font-style: italic;
-        }
-
-        .chart-caption {
-            font-size: 10px;
-            font-style: italic;
-        }
-
-        .back-button {
-            display: inline-block;
-            margin-bottom: 20px;
-            padding: 8px 16px;
-            background-color: #4472C4;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-        }
-
-        .back-button:hover {
-            background-color: #2C5AA0;
-        }
-
-        .ratio-box {
-            fill: #F0F0F0;
-            stroke: #CCCCCC;
-            stroke-width: 1px;
-            opacity: 0.8;
-            rx: 5;
-            ry: 5;
-        }
-
-        .caption-box {
-            fill: white;
-            stroke: lightgray;
-            stroke-width: 1px;
-            opacity: 0.7;
-            rx: 5;
-            ry: 5;
-        }
-    </style>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
     <div class="container">
         <h1 class="text-2xl font-bold mb-4">Perbandingan Pemesanan City Hotel vs Resort Hotel</h1>
-        <a href="index.html" class="back-button">Kembali ke Beranda</a>
-        <div id="chart" class="chart-container"></div>
+        <a href="index.html" class="link-button">Kembali ke Beranda</a>
+        <div id="chart" class="chart-container">
+            <div id="loading" class="text-center py-20">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                <p class="mt-4 text-gray-600">Memuat data...</p>
+            </div>
+        </div>
+        <div class="mt-8 bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-bold mb-3">Insight</h2>
+            <div id="insight" class="text-gray-700">
+                <p><span class="font-semibold">1.</span> City Hotel jauh lebih banyak dipesan dibandingkan Resort Hotel,
+                    dengan <span id="city-percent" class="font-semibold text-blue-600"></span>% dari total pemesanan.
+                </p>
+                <p><span class="font-semibold">2.</span> Resort Hotel hanya menyumbang <span id="resort-percent"
+                        class="font-semibold text-red-600"></span>% dari total pemesanan.</p>
+                <p><span class="font-semibold">3.</span> Rasio pemesanan City Hotel dibandingkan Resort Hotel adalah
+                    <span id="ratio-value" class="font-semibold"></span> : 1.
+                </p>
+                <p><span class="font-semibold">4.</span> Dalam angka absolut, City Hotel memiliki <span id="city-count"
+                        class="font-semibold text-blue-600"></span> pemesanan, sedangkan Resort Hotel memiliki <span
+                        id="resort-count" class="font-semibold text-red-600"></span> pemesanan.</p>
+                <p><span class="font-semibold">5.</span> Perbedaan jumlah pemesanan antara kedua jenis hotel adalah
+                    <span id="diff-value" class="font-semibold"></span> pemesanan.
+                </p>
+                <p><span class="font-semibold">6.</span> Dominasi City Hotel menunjukkan preferensi tamu terhadap lokasi
+                    di pusat kota dibandingkan dengan lokasi resort.</p>
+                <p><span class="font-semibold">7.</span> Pola ini konsisten di semua bulan seperti yang ditunjukkan pada
+                    visualisasi sebelumnya.</p>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -100,40 +56,39 @@
         // Colors from Python project - exact match
         const main_colors = ["#2C7BB6", "#D7191C", "#1A9641", "#FDAE61", "#FFFFBF", "#9E0142", "#A6761D", "#666666"];
 
-        // Create SVG
-        const svg = d3.select("#chart")
-            .append("svg")
-            .attr("width", width)
-            .attr("height", height);
-
-        // Add title
-        svg.append("text")
-            .attr("class", "chart-title")
-            .attr("x", width / 2)
-            .attr("y", 30)
-            .attr("text-anchor", "middle")
-            .attr("font-weight", "bold")
-            .attr("font-size", "16px")
-            .text("Perbandingan Pemesanan City Hotel vs Resort Hotel");
-
-        // Add watermark
-        svg.append("text")
-            .attr("class", "watermark")
-            .attr("x", width / 2)
-            .attr("y", height / 2)
-            .attr("text-anchor", "middle")
-            .attr("transform", `rotate(30 ${width / 2} ${height / 2})`)
-            .text("Analisis Data Hotel Booking");
-
-        // Create groups for each chart
-        const pieChartGroup = svg.append("g")
-            .attr("transform", `translate(${margin.left + innerWidth / 4}, ${margin.top + innerHeight / 2})`);
-
-        const barChartGroup = svg.append("g")
-            .attr("transform", `translate(${margin.left + 3 * innerWidth / 4}, ${margin.top})`);
+        // Format numbers with thousands separator
+        function formatNumber(num) {
+            return new Intl.NumberFormat().format(Math.round(num));
+        }
 
         // Load data
         d3.csv("data/hotel_bookings_processed.csv").then(data => {
+            // Hide loading indicator
+            document.getElementById('loading').style.display = 'none';
+
+            // Create SVG
+            const svg = d3.select("#chart")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+            // Add title
+            svg.append("text")
+                .attr("class", "chart-title")
+                .attr("x", width / 2)
+                .attr("y", 30)
+                .attr("text-anchor", "middle")
+                .attr("font-weight", "bold")
+                .attr("font-size", "16px")
+                .text("Perbandingan Pemesanan City Hotel vs Resort Hotel");
+
+            // Create groups for each chart
+            const pieChartGroup = svg.append("g")
+                .attr("transform", `translate(${margin.left + innerWidth / 4}, ${margin.top + innerHeight / 2})`);
+
+            const barChartGroup = svg.append("g")
+                .attr("transform", `translate(${margin.left + 3 * innerWidth / 4}, ${margin.top})`);
+
             // Process data for hotel types
             const hotelCounts = d3.rollup(
                 data,
@@ -154,16 +109,31 @@
             // Calculate ratio
             const ratio = hotelData[0].count / hotelData[1].count;
 
+            // Update insight information
+            document.getElementById('city-percent').textContent = hotelData[0].percentage.toFixed(1);
+            document.getElementById('resort-percent').textContent = hotelData[1].percentage.toFixed(1);
+            document.getElementById('ratio-value').textContent = ratio.toFixed(1);
+            document.getElementById('city-count').textContent = formatNumber(hotelData[0].count);
+            document.getElementById('resort-count').textContent = formatNumber(hotelData[1].count);
+            document.getElementById('diff-value').textContent = formatNumber(hotelData[0].count - hotelData[1].count);
+
             // Pie Chart
             const radius = Math.min(innerWidth / 4, innerHeight / 2) - 40;
 
+            // Define pie layout generator
+            const pieGenerator = d3.pie()
+                .value(d => d.count)
+                .sort(null); // Preserve sorting
+
+            // Define arc generator for pie slices
             const arcGenerator = d3.arc()
                 .innerRadius(0)
                 .outerRadius(radius);
 
-            const pieGenerator = d3.pie()
-                .value(d => d.count)
-                .sort(null); // Preserve sorting
+            // Define arc generator for label lines
+            const outerArc = d3.arc()
+                .innerRadius(radius * 1.1)
+                .outerRadius(radius * 1.1);
 
             const arcs = pieChartGroup.selectAll(".arc")
                 .data(pieGenerator(hotelData))
@@ -183,16 +153,33 @@
             const firstCentroid = arcGenerator.centroid(firstArc.datum());
             firstArc.attr("transform", `translate(${firstCentroid[0] * 0.1}, ${firstCentroid[1] * 0.1})`);
 
-            // Pie labels
-            arcs.append("text")
-                .attr("transform", d => {
+            // Add lines for labels
+            arcs.append("polyline")
+                .attr("points", function (d) {
                     const pos = arcGenerator.centroid(d);
                     const midAngle = Math.atan2(pos[1], pos[0]);
-                    const x = Math.cos(midAngle) * (radius + 20);
-                    const y = Math.sin(midAngle) * (radius + 20);
+                    const x1 = Math.cos(midAngle) * radius;
+                    const y1 = Math.sin(midAngle) * radius;
+                    const x2 = Math.cos(midAngle) * (radius + 30);
+                    const y2 = Math.sin(midAngle) * (radius + 30);
+                    const x3 = x2 + (midAngle > -Math.PI / 2 && midAngle < Math.PI / 2 ? 1 : -1) * 20;
+                    const y3 = y2;
+                    return [x1, y1, x2, y2, x3, y3].join(",");
+                })
+                .style("fill", "none")
+                .style("stroke", "#999")
+                .style("stroke-width", 1);
+
+            // Add external labels
+            arcs.append("text")
+                .attr("transform", function (d) {
+                    const pos = arcGenerator.centroid(d);
+                    const midAngle = Math.atan2(pos[1], pos[0]);
+                    const x = Math.cos(midAngle) * (radius + 40);
+                    const y = Math.sin(midAngle) * (radius + 40);
                     return `translate(${x}, ${y})`;
                 })
-                .attr("text-anchor", d => {
+                .attr("text-anchor", function (d) {
                     const midAngle = Math.atan2(arcGenerator.centroid(d)[1], arcGenerator.centroid(d)[0]);
                     return (midAngle < -Math.PI / 2 || midAngle > Math.PI / 2) ? "end" : "start";
                 })
@@ -200,6 +187,7 @@
                 .attr("font-weight", "bold")
                 .text(d => `${d.data.hotel} (${d.data.percentage.toFixed(1)}%)`);
 
+            // Add pie chart title
             pieChartGroup.append("text")
                 .attr("x", 0)
                 .attr("y", -radius - 20)
@@ -247,7 +235,7 @@
                 .attr("font-size", "12px")
                 .attr("font-weight", "bold")
                 .attr("fill", "white")
-                .text(d => d3.format(",")(d.count));
+                .text(d => formatNumber(d.count));
 
             // X-axis
             barChartGroup.append("g")
@@ -258,7 +246,7 @@
             barChartGroup.append("g")
                 .attr("transform", `translate(${-barChartWidth / 2}, 0)`)
                 .call(d3.axisLeft(yScale)
-                    .tickFormat(d => d3.format(",")(d)));
+                    .tickFormat(d => formatNumber(d)));
 
             // Bar chart title
             barChartGroup.append("text")
@@ -330,6 +318,14 @@
                 .attr("height", captionBox.height + 10);
 
             svg.node().appendChild(captionElem.node());
+        }).catch(error => {
+            console.error("Error loading data:", error);
+            document.getElementById('loading').innerHTML = `
+                <div class="text-red-500">
+                    <p class="font-bold">Error loading data</p>
+                    <p>Please make sure the CSV file is available at the correct path:</p>
+                    <p class="font-mono bg-gray-100 p-2 mt-2">data/hotel_bookings_processed.csv</p>
+                </div>`;
         });
     </script>
 </body>
