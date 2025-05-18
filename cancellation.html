@@ -99,7 +99,7 @@
             const container = document.getElementById(containerId);
             const width = container.clientWidth;
             const height = container.clientHeight;
-            const margin = { top: 20, right: 120, bottom: 30, left: 160 };
+            const margin = { top: 20, right: 120, bottom: 50, left: 160 };  // Increased bottom margin for x-axis label
             const innerWidth = width - margin.left - margin.right;
             const innerHeight = height - margin.top - margin.bottom;
 
@@ -129,12 +129,35 @@
                 .call(d3.axisBottom(xScale).ticks(5).tickFormat(d => d + "%"))
                 .call(g => g.select(".domain").remove());
 
+            // Add x-axis label
+            g.append("text")
+                .attr("class", "x-axis-label")
+                .attr("x", innerWidth / 2)
+                .attr("y", innerHeight + 40)
+                .attr("text-anchor", "middle")
+                .style("font-size", "12px")
+                .style("fill", "#666")
+                .text("Persentase Pembatalan (%)");
+
+            // Add y-axis label
+            g.append("text")
+                .attr("class", "y-axis-label")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -innerHeight / 2)
+                .attr("y", -120)
+                .attr("text-anchor", "middle")
+                .style("font-size", "12px")
+                .style("fill", "#666")
+                .text(containerId === "hotel-chart" ? "Jenis Hotel" : 
+                     containerId === "lead-time-chart" ? "Lead Time" :
+                     containerId === "deposit-chart" ? "Tipe Deposit" : "");
+
             g.append("g")
                 .attr("class", "y-axis")
                 .call(d3.axisLeft(yScale))
                 .call(g => g.select(".domain").remove());
 
-            // Add gridlines
+            // Add gridlines with more prominent styling
             g.append("g")
                 .attr("class", "grid")
                 .call(d3.axisBottom(xScale)
@@ -142,7 +165,10 @@
                     .tickSize(-innerHeight)
                     .tickFormat("")
                 )
-                .call(g => g.select(".domain").remove());
+                .call(g => g.select(".domain").remove())
+                .style("stroke", "#ddd")  // Darker grid color
+                .style("stroke-width", "1px")  // Thicker grid lines
+                .style("stroke-opacity", "1");  // Full opacity
 
             // Add bars
             const bars = g.selectAll(".bar")
@@ -156,7 +182,7 @@
                 .attr("width", d => xScale(d.value))
                 .attr("fill", d => colorScale(d.value))
                 .attr("stroke", "white")
-                .attr("stroke-width", 1);
+                .attr("stroke-width", "1px");  // Thicker stroke
 
             // Add label for each bar
             g.selectAll(".bar-label")
@@ -167,8 +193,18 @@
                 .attr("x", d => xScale(d.value) + 5)
                 .attr("y", d => yScale(d.category) + yScale.bandwidth() / 2)
                 .attr("dy", ".35em")
-                .style("font-size", "10px")
+                .style("font-size", "12px")
+                .style("fill", "#333")
                 .text(d => `${d.value.toFixed(1)}% (${formatNumber(d.count)})`);
+
+            // Update axis styling
+            g.select(".x-axis")
+                .style("font-size", "12px")
+                .style("color", "#666");
+
+            g.select(".y-axis")
+                .style("font-size", "12px")
+                .style("color", "#666");
         }
 
         // Function to create pie chart
@@ -233,13 +269,19 @@
             slices.append("text")
                 .attr("transform", d => {
                     const pos = arc.centroid(d);
-                    return `translate(${pos[0]},${pos[1]})`;
+                    const midAngle = d.endAngle < Math.PI ? d.startAngle/2 + d.endAngle/2 : d.startAngle/2 + d.endAngle/2 + Math.PI;
+                    const x = Math.cos(midAngle) * (radius + 30);
+                    const y = Math.sin(midAngle) * (radius + 30);
+                    return `translate(${x},${y})`;
                 })
                 .attr("dy", ".35em")
-                .attr("text-anchor", "middle")
-                .style("font-size", "12px")
+                .attr("text-anchor", d => {
+                    const midAngle = d.endAngle < Math.PI ? d.startAngle/2 + d.endAngle/2 : d.startAngle/2 + d.endAngle/2 + Math.PI;
+                    return Math.cos(midAngle) > 0 ? "start" : "end";
+                })
+                .style("font-size", "14px")
                 .style("font-weight", "bold")
-                .style("fill", "white")
+                .style("fill", "#333")
                 .text(d => `${d.data.label} (${d.data.value.toFixed(1)}%)`);
         }
 
@@ -379,6 +421,33 @@
                     .join(', ');
 
                 document.getElementById('other-deposits').textContent = otherDeposits;
+
+                // Update data labels to match the image
+                const leadTimeMapping = {
+                    '0-7 hari': '0-7 hari',
+                    '8-30 hari': '8-30 hari',
+                    '31-90 hari': '31-90 hari',
+                    '91-180 hari': '91-180 hari',
+                    '181-365 hari': '181-365 hari',
+                    '>365 hari': '>365 hari'
+                };
+
+                leadTimeData = leadTimeData.map(d => ({
+                    ...d,
+                    category: leadTimeMapping[d.category] || d.category
+                }));
+
+                // Update deposit type labels
+                const depositMapping = {
+                    'No Deposit': 'No Deposit',
+                    'Non Refund': 'Non Refund',
+                    'Refundable': 'Refundable'
+                };
+
+                depositTypeData = depositTypeData.map(d => ({
+                    ...d,
+                    category: depositMapping[d.category] || d.category
+                }));
             }).catch(error => {
                 console.error("Error loading or processing data:", error);
                 document.getElementById('loading').innerHTML = `
