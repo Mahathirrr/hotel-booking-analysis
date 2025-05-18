@@ -131,6 +131,22 @@
         <div id="loading" class="text-center p-10">
             <p>Memuat data...</p>
         </div>
+        
+        <!-- Insights Section -->
+        <div id="insights" class="mt-8 p-6 bg-white rounded-lg shadow">
+            <h2 class="text-xl font-bold mb-4">INSIGHT: TIPE KAMAR</h2>
+            <ol class="list-decimal pl-5 space-y-2">
+                <li>Tipe kamar A merupakan tipe kamar yang paling banyak dipesan dengan persentase tertinggi dari total pemesanan.</li>
+                <li>Tipe kamar D merupakan tipe kamar terbanyak kedua dari total pemesanan.</li>
+                <li>Tipe kamar E, F, G, dan H jarang dipilih, masing-masing dengan kurang dari 5% dari total pemesanan.</li>
+                <li>Rasio pemesanan tipe kamar A dibandingkan tipe kamar D menunjukkan dominasi preferensi tipe kamar A.</li>
+                <li>12.3% tamu mendapatkan tipe kamar yang berbeda dari yang mereka pesan.</li>
+                <li>Dari tamu yang mendapatkan tipe kamar berbeda, 4.3% mendapatkan upgrade dan 95.7% mendapatkan downgrade.</li>
+                <li>Secara keseluruhan, 0.5% dari semua tamu mendapatkan upgrade, sedangkan 11.8% mendapatkan downgrade.</li>
+                <li>Dominasi tipe kamar A menunjukkan preferensi tamu terhadap tipe kamar tersebut, yang mungkin menawarkan nilai terbaik dari segi harga dan fasilitas.</li>
+            </ol>
+
+        </div>
     </div>
 
     <script>
@@ -474,40 +490,45 @@
                 }
             });
 
-            const chartWidth = width * 0.8;
-            const chartHeight = height * 0.8;
-            const radius = Math.min(chartWidth, chartHeight) / 2;
+            // Increase chart dimensions
+            const chartWidth = width;
+            const chartHeight = height;
+            const radius = Math.min(chartWidth, chartHeight) / 2 * 0.50; // Increased from 0.45 to make pie chart bigger
 
             const svg = container.append("svg")
                 .attr("width", chartWidth)
                 .attr("height", chartHeight);
 
+            // Center the pie chart
             const g = svg.append("g")
                 .attr("transform", `translate(${chartWidth / 2},${chartHeight / 2})`);
 
+            // Add title with more space at top
             svg.append("text")
                 .attr("class", "chart-title")
                 .attr("x", chartWidth / 2)
-                .attr("y", 25)
+                .attr("y", 35)
                 .style("white-space", "pre-line")
                 .style("font-size", "14px")
+                .style("text-anchor", "middle")
                 .text(title);
 
             // Create arc generator
             const arc = d3.arc()
                 .innerRadius(0)
-                .outerRadius(radius - 20);
+                .outerRadius(radius);
 
-            const labelArc = d3.arc()
-                .innerRadius(radius - 40)
-                .outerRadius(radius - 40);
+            // Create outer arc for labels
+            const outerArc = d3.arc()
+                .innerRadius(radius * 1.1)
+                .outerRadius(radius * 1.1);
 
             // Create pie generator
             const pie = d3.pie()
                 .sort(null)
                 .value(d => d.value);
 
-            // Explode array - sesuaikan dengan kode Python
+            // Explode array
             const explode = data.map((_, i) => {
                 if (explodeSecond && i === 1) return 0.1;
                 if (!explodeSecond && i === 0) return 0.1;
@@ -536,17 +557,33 @@
                 .attr("stroke", "white")
                 .attr("stroke-width", 2);
 
-            // Labels dengan font size yang lebih besar dan format yang lebih jelas
+            // Add outer labels
+            const labelRadius = radius * 1.2;
             arcs.append("text")
-                .attr("transform", d => `translate(${labelArc.centroid(d)})`)
-                .attr("dy", ".35em")
-                .attr("text-anchor", "middle")
-                .attr("font-size", "11px")
-                .text(d => {
-                    const item = data[d.index];
-                    const label = item.label || item.key;
-                    const percentage = item.percentage !== undefined ? item.percentage.toFixed(1) : "0.0";
-                    return `${label} (${percentage}%)`;
+                .attr("transform", d => {
+                    const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
+                    const x = Math.cos(midAngle - Math.PI / 2) * labelRadius;
+                    const y = Math.sin(midAngle - Math.PI / 2) * labelRadius;
+                    return `translate(${x},${y})`;
+                })
+                .style("text-anchor", d => {
+                    const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
+                    return midAngle < Math.PI ? "start" : "end";
+                })
+                .style("font-size", "12px")
+                .style("font-weight", "normal")
+                .each(function(d) {
+                    const text = d3.select(this);
+                    const label = d.data.label || d.data.key;
+                    const percentage = d.data.percentage.toFixed(1);
+                    text.append("tspan")
+                        .text(label)
+                        .attr("x", 0)
+                        .attr("dy", "-0.5em");
+                    text.append("tspan")
+                        .text(`(${percentage}%)`)
+                        .attr("x", 0)
+                        .attr("dy", "1.2em");
                 });
 
             // Add watermark
