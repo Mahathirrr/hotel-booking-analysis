@@ -204,6 +204,20 @@
                 const colorScale = d3.scaleSequential(d3.interpolateViridis)
                     .domain([0, data.length - 1]);
 
+                // Add grid lines - moved before bars
+                g.append("g")
+                    .attr("class", "grid")
+                    .attr("transform", `translate(0,0)`)
+                    .style("z-index", "-1")
+                    .call(d3.axisBottom(xScale)
+                        .tickSize(innerHeight)
+                        .tickFormat("")
+                    )
+                    .selectAll("line")
+                    .style("stroke", "#e0e0e0")
+                    .style("stroke-opacity", 0.2)
+                    .style("stroke-dasharray", "2,2");
+
                 // Add bars
                 g.selectAll(".bar")
                     .data(data)
@@ -225,11 +239,11 @@
                     .append("text")
                     .attr("class", "value-label")
                     .attr("y", d => yScale(d.key) + yScale.bandwidth() / 2)
-                    .attr("x", d => xScale(d.value) + 5)
+                    .attr("x", d => xScale(d.value) + 25)
                     .attr("dy", ".35em")
                     .attr("text-anchor", "start")
                     .style("fill", "black")
-                    .style("font-size", "9px")
+                    .style("font-size", "11px")
                     .text(d => formatNumber(d.value));
 
                 // Add axes
@@ -245,17 +259,6 @@
                     .call(d3.axisBottom(xScale).tickFormat(d => formatNumber(d)))
                     .selectAll("text")
                     .style("font-size", "10px");
-
-                // Add grid lines
-                g.append("g")
-                    .attr("class", "grid")
-                    .call(d3.axisBottom(xScale)
-                        .tickSize(innerHeight)
-                        .tickFormat("")
-                    )
-                    .selectAll("line")
-                    .style("stroke", "#e0e0e0")
-                    .style("stroke-opacity", 0.3);
 
                 // Add chart title
                 svg.append("text")
@@ -304,6 +307,20 @@
                     .range([0, innerHeight])
                     .padding(0.1);
 
+                // Add grid lines first
+                g.append("g")
+                    .attr("class", "grid")
+                    .attr("transform", `translate(0,0)`)
+                    .style("z-index", "-1")
+                    .call(d3.axisBottom(xScale)
+                        .tickSize(innerHeight)
+                        .tickFormat("")
+                    )
+                    .selectAll("line")
+                    .style("stroke", "#e0e0e0")
+                    .style("stroke-opacity", 0.2)
+                    .style("stroke-dasharray", "2,2");
+
                 // Add city hotel bars
                 g.selectAll(".bar-city")
                     .data(data)
@@ -344,7 +361,7 @@
                     .attr("dy", ".35em")
                     .attr("text-anchor", "middle")
                     .style("fill", "white")
-                    .style("font-size", "10px")
+                    .style("font-size", "11px")  // Increased from 10px
                     .text(d => `${d.cityPct.toFixed(1)}%`);
 
                 // Add percentage labels for Resort Hotel (if enough space)
@@ -359,7 +376,7 @@
                     .attr("dy", ".35em")
                     .attr("text-anchor", "middle")
                     .style("fill", "white")
-                    .style("font-size", "10px")
+                    .style("font-size", "11px")  // Increased from 10px
                     .text(d => `${d.resortPct.toFixed(1)}%`);
 
                 // Add axes
@@ -375,17 +392,6 @@
                     .call(d3.axisBottom(xScale).tickFormat(d => `${d}%`))
                     .selectAll("text")
                     .style("font-size", "10px");
-
-                // Add grid lines
-                g.append("g")
-                    .attr("class", "grid")
-                    .call(d3.axisBottom(xScale)
-                        .tickSize(innerHeight)
-                        .tickFormat("")
-                    )
-                    .selectAll("line")
-                    .style("stroke", "#e0e0e0")
-                    .style("stroke-opacity", 0.3);
 
                 // Add chart title
                 svg.append("text")
