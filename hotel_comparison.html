@@ -47,14 +47,14 @@
 
     <script>
         // Set dimensions to match Python visualization
-        const width = 1000;
-        const height = 600;
-        const margin = { top: 60, right: 40, bottom: 120, left: 40 };
+        const width = 1200;
+        const height = 500;
+        const margin = { top: 80, right: 100, bottom: 80, left: 100 };
         const innerWidth = width - margin.left - margin.right;
         const innerHeight = height - margin.top - margin.bottom;
 
         // Colors from Python project - exact match
-        const main_colors = ["#2C7BB6", "#D7191C", "#1A9641", "#FDAE61", "#FFFFBF", "#9E0142", "#A6761D", "#666666"];
+        const main_colors = ["#4472C4", "#C00000"];
 
         // Format numbers with thousands separator
         function formatNumber(num) {
@@ -82,12 +82,12 @@
                 .attr("font-size", "16px")
                 .text("Perbandingan Pemesanan City Hotel vs Resort Hotel");
 
-            // Create groups for each chart
+            // Create groups for each chart with adjusted positions
             const pieChartGroup = svg.append("g")
-                .attr("transform", `translate(${margin.left + innerWidth / 4}, ${margin.top + innerHeight / 2})`);
+                .attr("transform", `translate(${width * 0.25}, ${height / 2})`);
 
             const barChartGroup = svg.append("g")
-                .attr("transform", `translate(${margin.left + 3 * innerWidth / 4}, ${margin.top})`);
+                .attr("transform", `translate(${width * 0.7}, ${margin.top})`);
 
             // Process data for hotel types
             const hotelCounts = d3.rollup(
@@ -118,7 +118,7 @@
             document.getElementById('diff-value').textContent = formatNumber(hotelData[0].count - hotelData[1].count);
 
             // Pie Chart
-            const radius = Math.min(innerWidth / 4, innerHeight / 2) - 40;
+            const radius = Math.min(width * 0.15, height * 0.3);
 
             // Define pie layout generator
             const pieGenerator = d3.pie()
@@ -132,8 +132,8 @@
 
             // Define arc generator for label lines
             const outerArc = d3.arc()
-                .innerRadius(radius * 1.1)
-                .outerRadius(radius * 1.1);
+                .innerRadius(radius * 1.2)
+                .outerRadius(radius * 1.2);
 
             const arcs = pieChartGroup.selectAll(".arc")
                 .data(pieGenerator(hotelData))
@@ -148,174 +148,184 @@
                 .attr("stroke", "white")
                 .attr("stroke-width", 2);
 
-            // Apply explode effect to first slice (City Hotel)
-            const firstArc = arcs.filter((d, i) => i === 0);
-            const firstCentroid = arcGenerator.centroid(firstArc.datum());
-            firstArc.attr("transform", `translate(${firstCentroid[0] * 0.1}, ${firstCentroid[1] * 0.1})`);
-
-            // Add lines for labels
-            arcs.append("polyline")
-                .attr("points", function (d) {
-                    const pos = arcGenerator.centroid(d);
+            // Add external labels with improved positioning
+            arcs.append("text")
+                .attr("transform", function(d) {
+                    const pos = outerArc.centroid(d);
                     const midAngle = Math.atan2(pos[1], pos[0]);
-                    const x1 = Math.cos(midAngle) * radius;
-                    const y1 = Math.sin(midAngle) * radius;
-                    const x2 = Math.cos(midAngle) * (radius + 30);
-                    const y2 = Math.sin(midAngle) * (radius + 30);
-                    const x3 = x2 + (midAngle > -Math.PI / 2 && midAngle < Math.PI / 2 ? 1 : -1) * 20;
-                    const y3 = y2;
+                    const x = Math.cos(midAngle) * (radius * 1.3);
+                    const y = Math.sin(midAngle) * (radius * 1.3);
+                    return `translate(${x}, ${y})`;
+                })
+                .attr("text-anchor", function(d) {
+                    const pos = outerArc.centroid(d);
+                    return (pos[0] >= 0) ? "start" : "end";
+                })
+                .attr("font-size", "12px")
+                .attr("font-weight", "bold")
+                .text(d => `${d.data.hotel} (${d.data.percentage.toFixed(1)}%)`);
+
+            // Add connecting lines with improved positioning
+            arcs.append("polyline")
+                .attr("points", function(d) {
+                    const pos = outerArc.centroid(d);
+                    const midAngle = Math.atan2(pos[1], pos[0]);
+                    const x1 = arcGenerator.centroid(d)[0];
+                    const y1 = arcGenerator.centroid(d)[1];
+                    const x2 = Math.cos(midAngle) * (radius * 1.2);
+                    const y2 = Math.sin(midAngle) * (radius * 1.2);
+                    const x3 = Math.cos(midAngle) * (radius * 1.3);
+                    const y3 = Math.sin(midAngle) * (radius * 1.3);
                     return [x1, y1, x2, y2, x3, y3].join(",");
                 })
                 .style("fill", "none")
                 .style("stroke", "#999")
                 .style("stroke-width", 1);
 
-            // Add external labels
-            arcs.append("text")
-                .attr("transform", function (d) {
-                    const pos = arcGenerator.centroid(d);
-                    const midAngle = Math.atan2(pos[1], pos[0]);
-                    const x = Math.cos(midAngle) * (radius + 40);
-                    const y = Math.sin(midAngle) * (radius + 40);
-                    return `translate(${x}, ${y})`;
-                })
-                .attr("text-anchor", function (d) {
-                    const midAngle = Math.atan2(arcGenerator.centroid(d)[1], arcGenerator.centroid(d)[0]);
-                    return (midAngle < -Math.PI / 2 || midAngle > Math.PI / 2) ? "end" : "start";
-                })
-                .attr("font-size", "12px")
-                .attr("font-weight", "bold")
-                .text(d => `${d.data.hotel} (${d.data.percentage.toFixed(1)}%)`);
-
-            // Add pie chart title
+            // Pie chart title with adjusted position
             pieChartGroup.append("text")
                 .attr("x", 0)
-                .attr("y", -radius - 20)
+                .attr("y", -radius - 40)
                 .attr("text-anchor", "middle")
                 .attr("font-size", "14px")
                 .text("Persentase Pemesanan berdasarkan Jenis Hotel");
 
             // Bar Chart
-            const barWidth = 70;
-            const barSpacing = 20;
+            const barWidth = 80;
+            const barSpacing = 60;
             const barChartWidth = (barWidth + barSpacing) * hotelData.length;
 
             const xScale = d3.scaleBand()
                 .domain(hotelData.map(d => d.hotel))
-                .range([0, barChartWidth])
-                .padding(0.1);
+                .range([-barChartWidth/2, barChartWidth/2])
+                .padding(0.3);
 
             const yScale = d3.scaleLinear()
                 .domain([0, d3.max(hotelData, d => d.count) * 1.1])
                 .range([innerHeight, 0]);
 
-            // Bars
-            barChartGroup.selectAll(".bar")
-                .data(hotelData)
-                .enter()
-                .append("rect")
-                .attr("class", "bar")
-                .attr("x", d => -barChartWidth / 2 + xScale(d.hotel))
-                .attr("y", d => yScale(d.count))
-                .attr("width", xScale.bandwidth())
-                .attr("height", d => innerHeight - yScale(d.count))
-                .attr("fill", (d, i) => main_colors[i])
-                .attr("stroke", "white")
-                .attr("stroke-width", 1.5);
-
-            // Bar labels
-            barChartGroup.selectAll(".bar-label")
-                .data(hotelData)
-                .enter()
-                .append("text")
-                .attr("class", "bar-label")
-                .attr("x", d => -barChartWidth / 2 + xScale(d.hotel) + xScale.bandwidth() / 2)
-                .attr("y", d => yScale(d.count) + (innerHeight - yScale(d.count)) / 2)
-                .attr("text-anchor", "middle")
-                .attr("font-size", "12px")
-                .attr("font-weight", "bold")
-                .attr("fill", "white")
-                .text(d => formatNumber(d.count));
-
-            // X-axis
-            barChartGroup.append("g")
-                .attr("transform", `translate(${-barChartWidth / 2}, ${innerHeight})`)
-                .call(d3.axisBottom(xScale));
-
-            // Y-axis with formatted numbers
-            barChartGroup.append("g")
-                .attr("transform", `translate(${-barChartWidth / 2}, 0)`)
-                .call(d3.axisLeft(yScale)
-                    .tickFormat(d => formatNumber(d)));
-
-            // Bar chart title
-            barChartGroup.append("text")
-                .attr("x", -barChartWidth / 2 + barChartWidth / 2)
-                .attr("y", -20)
-                .attr("text-anchor", "middle")
-                .attr("font-size", "14px")
-                .text("Jumlah Pemesanan berdasarkan Jenis Hotel");
-
-            // Y-axis label
-            barChartGroup.append("text")
-                .attr("transform", "rotate(-90)")
-                .attr("x", -innerHeight / 2)
-                .attr("y", -barChartWidth / 2 - 30)
-                .attr("text-anchor", "middle")
-                .attr("font-size", "12px")
-                .text("Jumlah Pemesanan");
-
-            // Add grid to bar chart
+            // Add grid lines first (behind bars)
             barChartGroup.append("g")
                 .attr("class", "grid")
-                .attr("transform", `translate(${-barChartWidth / 2}, 0)`)
+                .attr("transform", `translate(${-barChartWidth/2}, 0)`)
                 .call(d3.axisLeft(yScale)
                     .tickSize(-barChartWidth)
                     .tickFormat(""))
                 .selectAll("line")
                 .attr("stroke", "#e0e0e0")
-                .attr("stroke-opacity", 0.3);
+                .attr("stroke-opacity", 0.2)
+                .style("stroke-dasharray", "2,2");
 
-            // Ratio text with background box
+            // Bars with adjusted positioning
+            barChartGroup.selectAll(".bar")
+                .data(hotelData)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", d => xScale(d.hotel))
+                .attr("y", d => yScale(d.count))
+                .attr("width", xScale.bandwidth())
+                .attr("height", d => innerHeight - yScale(d.count))
+                .attr("fill", (d, i) => main_colors[i]);
+
+            // Bar labels with adjusted positioning
+            barChartGroup.selectAll(".bar-label")
+                .data(hotelData)
+                .enter()
+                .append("text")
+                .attr("class", "bar-label")
+                .attr("x", d => xScale(d.hotel) + xScale.bandwidth()/2)
+                .attr("y", d => yScale(d.count) - 10)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "12px")
+                .attr("font-weight", "bold")
+                .attr("fill", "black")
+                .text(d => formatNumber(d.count));
+
+            // X-axis with adjusted positioning
+            barChartGroup.append("g")
+                .attr("transform", `translate(0,${innerHeight})`)
+                .call(d3.axisBottom(xScale))
+                .selectAll("text")
+                .style("font-size", "11px");
+
+            // Y-axis with adjusted positioning
+            barChartGroup.append("g")
+                .attr("transform", `translate(${-barChartWidth/2},0)`)
+                .call(d3.axisLeft(yScale)
+                    .tickFormat(d => formatNumber(d)))
+                .selectAll("text")
+                .style("font-size", "11px");
+
+            // Add X-axis label
+            barChartGroup.append("text")
+                .attr("x", 0)
+                .attr("y", innerHeight + 40)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "12px")
+                .text("Jenis Hotel");
+
+            // Add Y-axis label
+            barChartGroup.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -innerHeight/2)
+                .attr("y", -barChartWidth/2 - 50)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "12px")
+                .text("Jumlah Pemesanan");
+
+            // Add bar chart title with adjusted position
+            barChartGroup.append("text")
+                .attr("x", 0)
+                .attr("y", -20)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "14px")
+                .text("Jumlah Pemesanan berdasarkan Jenis Hotel");
+
+            // Ratio text with adjusted position
             const ratioText = `Rasio ${hotelData[0].hotel} : ${hotelData[1].hotel} = ${ratio.toFixed(1)} : 1`;
-
+            
             const ratioTextElem = svg.append("text")
                 .attr("x", width / 2)
-                .attr("y", height - 60)
+                .attr("y", height - 30)
                 .attr("text-anchor", "middle")
                 .attr("font-size", "12px")
                 .attr("font-weight", "bold")
                 .text(ratioText);
 
             const ratioBox = ratioTextElem.node().getBBox();
-
+            
+            // Add background box for ratio text
             svg.insert("rect", "text")
-                .attr("class", "ratio-box")
                 .attr("x", ratioBox.x - 10)
                 .attr("y", ratioBox.y - 5)
                 .attr("width", ratioBox.width + 20)
-                .attr("height", ratioBox.height + 10);
+                .attr("height", ratioBox.height + 10)
+                .attr("fill", "white")
+                .attr("stroke", "#ccc");
 
             svg.node().appendChild(ratioTextElem.node());
 
-            // Caption
+            // Caption with adjusted position
             const caption = `City Hotel mendominasi dengan ${hotelData[0].percentage.toFixed(1)}% dari total pemesanan, sedangkan Resort Hotel menyumbang ${hotelData[1].percentage.toFixed(1)}%.`;
 
             const captionElem = svg.append("text")
-                .attr("class", "chart-caption")
                 .attr("x", width / 2)
-                .attr("y", height - 30)
+                .attr("y", height - 10)
                 .attr("text-anchor", "middle")
+                .attr("font-size", "11px")
                 .text(caption);
 
             const captionBox = captionElem.node().getBBox();
 
+            // Add background box for caption
             svg.insert("rect", "text:last-of-type")
-                .attr("class", "caption-box")
                 .attr("x", captionBox.x - 10)
-                .attr("y", captionBox.y - 5)
+                .attr("y", captionBox.y - 2)
                 .attr("width", captionBox.width + 20)
-                .attr("height", captionBox.height + 10);
+                .attr("height", captionBox.height + 4)
+                .attr("fill", "white")
+                .attr("stroke", "#ccc");
 
             svg.node().appendChild(captionElem.node());
         }).catch(error => {
