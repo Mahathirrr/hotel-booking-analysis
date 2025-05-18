@@ -287,7 +287,7 @@
             // Set dimensions
             const width = document.getElementById('region-pie').offsetWidth;
             const height = document.getElementById('region-pie').offsetHeight;
-            const radius = Math.min(width, height) * 0.4;
+            const radius = Math.min(width, height) * 0.3;
 
             // Create SVG
             const svg = d3.select("#region-pie")
@@ -374,7 +374,7 @@
                     const midAngle = Math.atan2(arc.centroid(d)[1], arc.centroid(d)[0]);
                     return (midAngle < -Math.PI / 2 || midAngle > Math.PI / 2) ? "end" : "start";
                 })
-                .style('font-size', '11px')
+                .style('font-size', '13px')
                 .style('font-weight', 'normal')
                 .text(d => {
                     const percentage = (d.data.value / total * 100).toFixed(1);
@@ -385,7 +385,8 @@
             svg.append("text")
                 .attr("class", "chart-title")
                 .attr("x", width / 2)
-                .attr("y", 25)
+                .attr("y", 10)
+                .style("margin-bottom", "30px")
                 .attr("text-anchor", "middle")
                 .style("font-size", "14px")
                 .style("font-weight", "bold")
