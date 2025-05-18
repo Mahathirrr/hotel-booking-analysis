@@ -137,9 +137,9 @@
         // Konstanta untuk visualisasi
         const width = 600;
         const height = 400;
-        const margin = { top: 40, right: 30, bottom: 50, left: 120 };
+        const margin = { top: 40, right: 120, bottom: 50, left: 120 };
 
-        // Warna dari proyek Python
+        // Warna dari proyek Python - menggunakan warna yang sama dengan kode Python
         const main_colors = ["#2C7BB6", "#D7191C", "#1A9641", "#FDAE61", "#FFFFBF", "#9E0142", "#A6761D", "#666666"];
 
         // Fungsi untuk menambahkan watermark
@@ -364,7 +364,8 @@
                 .attr("class", "chart-title")
                 .attr("x", chartWidth / 2)
                 .attr("y", 25)
-                .text("Distribusi Tipe Kamar yang Dipesan");
+                .text("Distribusi Tipe Kamar yang Dipesan")
+                .style("font-size", "14px");
 
             // Scales
             const xScale = d3.scaleLinear()
@@ -376,7 +377,7 @@
                 .range([0, height])
                 .padding(0.2);
 
-            // Color scale
+            // Color scale - menggunakan viridis seperti di Python
             const colorScale = d3.scaleSequential()
                 .domain([0, data.length - 1])
                 .interpolator(d3.interpolateViridis);
@@ -388,19 +389,22 @@
                     .tickSize(height)
                     .tickFormat("")
                 )
-                .style("opacity", 0.3);
+                .style("opacity", 0.1);
 
-            // Axes
+            // Axes dengan font size yang lebih besar
             g.append("g")
                 .attr("class", "axis")
                 .call(d3.axisLeft(yScale))
                 .selectAll("text")
-                .style("text-anchor", "end");
+                .style("text-anchor", "end")
+                .style("font-size", "11px");
 
             g.append("g")
                 .attr("class", "axis")
                 .attr("transform", `translate(0,${height})`)
-                .call(d3.axisBottom(xScale).tickFormat(d => formatThousands(d)));
+                .call(d3.axisBottom(xScale).tickFormat(d => formatThousands(d)))
+                .selectAll("text")
+                .style("font-size", "11px");
 
             // Bars
             g.selectAll(".bar")
@@ -414,7 +418,7 @@
                 .attr("width", d => xScale(d.value))
                 .attr("fill", (d, i) => colorScale(i));
 
-            // Labels
+            // Labels dengan font size yang lebih besar
             g.selectAll(".label")
                 .data(data)
                 .enter()
@@ -423,27 +427,30 @@
                 .attr("x", d => xScale(d.value) + 5)
                 .attr("y", d => yScale(d.key) + yScale.bandwidth() / 2)
                 .attr("dy", "0.35em")
+                .style("font-size", "11px")
                 .text(d => `${formatThousands(d.value)} (${(d.percentage || 0).toFixed(1)}%)`);
 
-            // Axis labels
+            // Axis labels dengan font size yang lebih besar
             svg.append("text")
                 .attr("class", "axis")
                 .attr("text-anchor", "middle")
                 .attr("x", margin.left + width / 2)
                 .attr("y", chartHeight - 10)
+                .style("font-size", "12px")
                 .text("Jumlah Pemesanan");
 
             svg.append("text")
                 .attr("class", "axis")
                 .attr("text-anchor", "middle")
                 .attr("transform", `translate(20, ${margin.top + height / 2})rotate(-90)`)
+                .style("font-size", "12px")
                 .text("Tipe Kamar");
 
             // Add watermark
             addWatermark(svg, chartWidth, chartHeight);
         }
 
-        // Fungsi untuk membuat pie chart
+        // Fungsi untuk membuat pie chart dengan label yang lebih jelas
         function createPieChart(container, data, title, colors, explodeSecond = false) {
             if (!data || data.length === 0 || data.every(d => !d.value)) {
                 container.append("div")
@@ -483,6 +490,7 @@
                 .attr("x", chartWidth / 2)
                 .attr("y", 25)
                 .style("white-space", "pre-line")
+                .style("font-size", "14px")
                 .text(title);
 
             // Create arc generator
@@ -499,7 +507,7 @@
                 .sort(null)
                 .value(d => d.value);
 
-            // Explode array
+            // Explode array - sesuaikan dengan kode Python
             const explode = data.map((_, i) => {
                 if (explodeSecond && i === 1) return 0.1;
                 if (!explodeSecond && i === 0) return 0.1;
@@ -528,7 +536,7 @@
                 .attr("stroke", "white")
                 .attr("stroke-width", 2);
 
-            // Labels
+            // Labels dengan font size yang lebih besar dan format yang lebih jelas
             arcs.append("text")
                 .attr("transform", d => `translate(${labelArc.centroid(d)})`)
                 .attr("dy", ".35em")
