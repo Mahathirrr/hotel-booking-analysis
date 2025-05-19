@@ -37,7 +37,8 @@
             <h2 class="text-xl font-bold mb-3">Insight</h2>
             <div id="insight" class="text-gray-700">
                 <p><span class="font-semibold">1.</span> Online TA (Travel Agent) merupakan segmen pasar terbesar dengan
-                    <span id="online-ta-percent" class="font-semibold text-green-600"></span>% dari total pemesanan.</p>
+                    <span id="online-ta-percent" class="font-semibold text-green-600"></span>% dari total pemesanan.
+                </p>
                 <p><span class="font-semibold">2.</span> Offline TA/TO (Travel Agent/Tour Operator) merupakan segmen
                     pasar terbesar kedua dengan <span id="offline-ta-percent"
                         class="font-semibold text-green-600"></span>% dari total pemesanan.</p>
@@ -54,6 +55,7 @@
                     Hotel lebih populer untuk pemesanan bisnis.</p>
                 <p><span class="font-semibold">7.</span> Semua segmen pasar didominasi oleh City Hotel, kecuali Groups
                     yang memiliki distribusi lebih seimbang.</p>
+                <p class="mt-2 text-xs text-gray-500 italic" id="others-explanation"></p>
             </div>
         </div>
     </div>
@@ -62,15 +64,20 @@
         // Set dimensions to match Python visualization
         const width = 900;
         const height = 500;
-        const margin = { top: 60, right: 150, bottom: 60, left: 200 };
+        const margin = { top: 60, right: 180, bottom: 80, left: 200 }; // Increased bottom margin for footnote
         const innerWidth = width - margin.left - margin.right;
         const innerHeight = height - margin.top - margin.bottom;
 
         // Define main colors to match Python project
         const main_colors = ["#2C7BB6", "#D7191C", "#1A9641", "#FDAE61", "#FFFFBF", "#9E0142", "#A6761D", "#666666"];
 
+        // Format number with thousands separator
+        function formatNumber(num) {
+            return new Intl.NumberFormat().format(Math.round(num));
+        }
+
         // Function to combine small categories
-        function combineSmallCategories(data, threshold = 0.05, otherName = 'Others') {
+        function combineSmallCategories(data, threshold = 0.05, otherName = 'Others*') {
             const total = d3.sum(data, d => d.value);
             const smallCategories = data.filter(d => d.value / total < threshold);
 
@@ -79,17 +86,14 @@
             const otherSum = d3.sum(smallCategories, d => d.value);
             const filteredData = data.filter(d => d.value / total >= threshold);
 
+            window.smallCategoriesDetail = smallCategories.map(d => `${d.key}: ${formatNumber(d.value)} (${(d.value / total * 100).toFixed(1)}%)`).join(", ");
+
             filteredData.push({
                 key: otherName,
                 value: otherSum
             });
 
             return filteredData.sort((a, b) => b.value - a.value);
-        }
-
-        // Format number with thousands separator
-        function formatNumber(num) {
-            return new Intl.NumberFormat().format(Math.round(num));
         }
 
         // Load data
@@ -106,15 +110,11 @@
             let marketSegmentData = Array.from(marketSegmentCounts, ([key, value]) => ({ key, value }));
             const total = d3.sum(marketSegmentData, d => d.value);
 
-            // Calculate percentages
             marketSegmentData.forEach(d => {
                 d.percentage = (d.value / total) * 100;
             });
 
-            // Sort by value in descending order
             marketSegmentData.sort((a, b) => b.value - a.value);
-
-            // Combine small categories
             marketSegmentData = combineSmallCategories(marketSegmentData);
 
             // Process data for hotel type distribution by market segment
@@ -134,28 +134,22 @@
                 resortHotel: value['Resort Hotel'],
                 total: value.total,
                 cityPct: (value['City Hotel'] / value.total) * 100,
-                resortPct: value['Resort Hotel'] / value.total * 100
+                resortPct: (value['Resort Hotel'] / value.total) * 100
             }));
 
-            // Sort by total in descending order to match marketSegmentData
             segmentByHotelData.sort((a, b) => b.total - a.total);
 
-            // Create horizontal bar chart for market segments
+            // Create charts
             createHorizontalBarChart(marketSegmentData);
-
-            // Create stacked bar chart for hotel distribution by segment
             createStackedBarChart(segmentByHotelData);
 
-            // Get values for Online TA and Direct comparison
+            // Update insights
             const onlineTA = marketSegmentData.find(d => d.key === 'Online TA');
             const direct = marketSegmentData.find(d => d.key === 'Direct');
             const offlineTA = marketSegmentData.find(d => d.key === 'Offline TA/TO');
-
-            // Get values for Groups and Corporate
             const groups = segmentByHotelData.find(d => d.segment === 'Groups');
             const corporate = segmentByHotelData.find(d => d.segment === 'Corporate');
 
-            // Update insight section
             document.getElementById('online-ta-percent').textContent = onlineTA ? onlineTA.percentage.toFixed(1) : 'N/A';
             document.getElementById('offline-ta-percent').textContent = offlineTA ? offlineTA.percentage.toFixed(1) : 'N/A';
             document.getElementById('direct-percent').textContent = direct ? direct.percentage.toFixed(1) : 'N/A';
@@ -163,21 +157,23 @@
             if (onlineTA && direct) {
                 const ratio = (onlineTA.value / direct.value).toFixed(1);
                 document.getElementById('ratio-value').textContent = ratio;
-
-                // Show comparison box
                 document.getElementById('comparison-box').classList.remove('hidden');
                 document.getElementById('comparison-text').textContent =
                     `Online TA : Direct = ${ratio} : 1\n` +
                     `Online TA merupakan ${onlineTA.percentage.toFixed(1)}% dari total pemesanan, sedangkan Direct ${direct.percentage.toFixed(1)}%.`;
             }
 
-            // Update groups and corporate percentages
             if (groups) {
                 document.getElementById('groups-resort-percent').textContent = groups.resortPct.toFixed(1);
             }
 
             if (corporate) {
                 document.getElementById('corporate-city-percent').textContent = corporate.cityPct.toFixed(1);
+            }
+
+            if (marketSegmentData.some(d => d.key === 'Others*')) {
+                document.getElementById('others-explanation').textContent =
+                    `* "Others" merupakan gabungan dari segmen pasar minor dengan persentase <5%: ${window.smallCategoriesDetail}`;
             }
 
             // Function to create horizontal bar chart
@@ -190,7 +186,6 @@
                 const g = svg.append("g")
                     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-                // Create scales
                 const xScale = d3.scaleLinear()
                     .domain([0, d3.max(data, d => d.value) * 1.1])
                     .range([0, innerWidth]);
@@ -200,11 +195,10 @@
                     .range([0, innerHeight])
                     .padding(0.1);
 
-                // Create color scale using viridis palette (like in Python)
-                const colorScale = d3.scaleSequential(d3.interpolateViridis)
-                    .domain([0, data.length - 1]);
+                const colorScale = d3.scaleOrdinal()
+                    .domain(data.map(d => d.key))
+                    .range(d3.quantize(d3.interpolateViridis, data.length));
 
-                // Add grid lines - moved before bars
                 g.append("g")
                     .attr("class", "grid")
                     .attr("transform", `translate(0,0)`)
@@ -218,7 +212,6 @@
                     .style("stroke-opacity", 0.2)
                     .style("stroke-dasharray", "2,2");
 
-                // Add bars
                 g.selectAll(".bar")
                     .data(data)
                     .enter()
@@ -228,11 +221,10 @@
                     .attr("x", 0)
                     .attr("height", yScale.bandwidth())
                     .attr("width", d => xScale(d.value))
-                    .attr("fill", (d, i) => colorScale(i))
+                    .attr("fill", (d, i) => colorScale(d.key))
                     .attr("stroke", "white")
                     .attr("stroke-width", 1);
 
-                // Add value labels
                 g.selectAll(".value-label")
                     .data(data)
                     .enter()
@@ -246,7 +238,6 @@
                     .style("font-size", "11px")
                     .text(d => formatNumber(d.value));
 
-                // Add axes
                 g.append("g")
                     .attr("class", "axis")
                     .call(d3.axisLeft(yScale))
@@ -260,7 +251,6 @@
                     .selectAll("text")
                     .style("font-size", "10px");
 
-                // Add chart title
                 svg.append("text")
                     .attr("class", "chart-title")
                     .attr("x", width / 2)
@@ -270,10 +260,9 @@
                     .style("font-weight", "bold")
                     .text("Jumlah Pemesanan berdasarkan Segmen Pasar");
 
-                // Add axis labels
                 svg.append("text")
                     .attr("x", width / 2)
-                    .attr("y", height - 15)
+                    .attr("y", height - 30) // Adjusted to avoid overlap with footnote
                     .style("font-weight", "bold")
                     .attr("text-anchor", "middle")
                     .style("font-size", "13px")
@@ -287,19 +276,32 @@
                     .style("font-weight", "bold")
                     .style("font-size", "13px")
                     .text("Segmen Pasar");
+
+                if (data.some(d => d.key === 'Others*')) {
+                    svg.append("text")
+                        .attr("x", margin.left)
+                        .attr("y", height - 8) // Moved further down to avoid overlap
+                        .attr("text-anchor", "start")
+                        .style("font-size", "9px")
+                        .style("font-style", "italic")
+                        .style("fill", "#666")
+                        .text(`* Others: segmen pasar dengan persentase <5% (${window.smallCategoriesDetail})`);
+                }
             }
 
             // Function to create stacked bar chart for hotel distribution
             function createStackedBarChart(data) {
+                const chartWidth = width;
+                const chartHeight = height;
+
                 const svg = d3.select("#distribution-chart")
                     .append("svg")
-                    .attr("width", width)
-                    .attr("height", height);
+                    .attr("width", chartWidth)
+                    .attr("height", chartHeight);
 
                 const g = svg.append("g")
                     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-                // Create scales
                 const xScale = d3.scaleLinear()
                     .domain([0, 100])
                     .range([0, innerWidth]);
@@ -309,7 +311,6 @@
                     .range([0, innerHeight])
                     .padding(0.1);
 
-                // Add grid lines first
                 g.append("g")
                     .attr("class", "grid")
                     .attr("transform", `translate(0,0)`)
@@ -323,7 +324,6 @@
                     .style("stroke-opacity", 0.2)
                     .style("stroke-dasharray", "2,2");
 
-                // Add city hotel bars
                 g.selectAll(".bar-city")
                     .data(data)
                     .enter()
@@ -333,11 +333,10 @@
                     .attr("x", 0)
                     .attr("height", yScale.bandwidth())
                     .attr("width", d => xScale(d.cityPct))
-                    .attr("fill", main_colors[0])  // Blue for City Hotel
+                    .attr("fill", main_colors[0])
                     .attr("stroke", "white")
                     .attr("stroke-width", 1);
 
-                // Add resort hotel bars
                 g.selectAll(".bar-resort")
                     .data(data)
                     .enter()
@@ -347,15 +346,14 @@
                     .attr("x", d => xScale(d.cityPct))
                     .attr("height", yScale.bandwidth())
                     .attr("width", d => xScale(d.resortPct))
-                    .attr("fill", main_colors[1])  // Red for Resort Hotel
+                    .attr("fill", main_colors[1])
                     .attr("stroke", "white")
                     .attr("stroke-width", 1);
 
-                // Add percentage labels for City Hotel (if enough space)
                 g.selectAll(".label-city")
                     .data(data)
                     .enter()
-                    .filter(d => d.cityPct > 15)  // Only add labels if enough space
+                    .filter(d => d.cityPct > 10)
                     .append("text")
                     .attr("class", "label-city")
                     .attr("y", d => yScale(d.segment) + yScale.bandwidth() / 2)
@@ -363,25 +361,25 @@
                     .attr("dy", ".35em")
                     .attr("text-anchor", "middle")
                     .style("fill", "white")
-                    .style("font-size", "11px")  // Increased from 10px
+                    .style("font-size", "11px")
+                    .style("font-weight", "bold")
                     .text(d => `${d.cityPct.toFixed(1)}%`);
 
-                // Add percentage labels for Resort Hotel (if enough space)
                 g.selectAll(".label-resort")
                     .data(data)
                     .enter()
-                    .filter(d => d.resortPct > 15)  // Only add labels if enough space
+                    .filter(d => d.resortPct > 10)
                     .append("text")
                     .attr("class", "label-resort")
                     .attr("y", d => yScale(d.segment) + yScale.bandwidth() / 2)
-                    .attr("x", d => xScale(d.cityPct + d.resortPct / 2))
+                    .attr("x", d => xScale(d.cityPct) + xScale(d.resortPct / 2))
                     .attr("dy", ".35em")
                     .attr("text-anchor", "middle")
                     .style("fill", "white")
-                    .style("font-size", "11px")  // Increased from 10px
+                    .style("font-size", "11px")
+                    .style("font-weight", "bold")
                     .text(d => `${d.resortPct.toFixed(1)}%`);
 
-                // Add axes
                 g.append("g")
                     .attr("class", "axis")
                     .call(d3.axisLeft(yScale))
@@ -395,20 +393,18 @@
                     .selectAll("text")
                     .style("font-size", "10px");
 
-                // Add chart title
                 svg.append("text")
                     .attr("class", "chart-title")
-                    .attr("x", width / 2)
+                    .attr("x", chartWidth / 2)
                     .attr("y", 30)
                     .attr("text-anchor", "middle")
                     .style("font-size", "20px")
                     .style("font-weight", "bold")
                     .text("Distribusi Jenis Hotel berdasarkan Segmen Pasar");
 
-                // Add axis labels
                 svg.append("text")
-                    .attr("x", width / 2)
-                    .attr("y", height - 15)
+                    .attr("x", chartWidth / 2)
+                    .attr("y", chartHeight - 15)
                     .attr("text-anchor", "middle")
                     .style("font-size", "13px")
                     .style("font-weight", "bold")
@@ -416,53 +412,60 @@
 
                 svg.append("text")
                     .attr("transform", "rotate(-90)")
-                    .attr("x", -height / 2)
+                    .attr("x", -chartHeight / 2)
                     .attr("y", 120)
                     .attr("text-anchor", "middle")
                     .style("font-size", "13px")
                     .style("font-weight", "bold")
                     .text("Segmen Pasar");
 
-                // Add legend - improved positioning to avoid overlap
+                // Adjusted legend position to avoid overlap
                 const legend = svg.append("g")
-                    .attr("transform", `translate(${width - 120}, ${height - 60})`);
+                    .attr("transform", `translate(${chartWidth - margin.right + 20}, 70)`); // Moved further down and adjusted to fit within right margin
 
-                // Legend background
                 legend.append("rect")
-                    .attr("class", "legend-box")
                     .attr("x", -10)
                     .attr("y", -10)
-                    .attr("width", 110)
-                    .attr("height", 60)
+                    .attr("width", 120)
+                    .attr("height", 70)
                     .attr("rx", 4)
-                    .attr("ry", 4);
+                    .attr("ry", 4)
+                    .attr("fill", "white")
+                    .attr("stroke", "#ddd")
+                    .attr("stroke-width", 1);
 
-                // City Hotel
+                legend.append("text")
+                    .attr("x", 50)
+                    .attr("y", 0)
+                    .attr("text-anchor", "middle")
+                    .attr("font-size", "11px")
+                    .attr("font-weight", "bold")
+                    .text("Jenis Hotel");
+
                 legend.append("rect")
                     .attr("x", 0)
-                    .attr("y", 0)
+                    .attr("y", 10)
                     .attr("width", 15)
                     .attr("height", 15)
                     .attr("fill", main_colors[0]);
 
                 legend.append("text")
                     .attr("x", 25)
-                    .attr("y", 12)
-                    .style("font-size", "10px")
+                    .attr("y", 22)
+                    .style("font-size", "11px")
                     .text("City Hotel");
 
-                // Resort Hotel
                 legend.append("rect")
                     .attr("x", 0)
-                    .attr("y", 25)
+                    .attr("y", 35)
                     .attr("width", 15)
                     .attr("height", 15)
                     .attr("fill", main_colors[1]);
 
                 legend.append("text")
                     .attr("x", 25)
-                    .attr("y", 37)
-                    .style("font-size", "10px")
+                    .attr("y", 47)
+                    .style("font-size", "11px")
                     .text("Resort Hotel");
             }
         }).catch(error => {

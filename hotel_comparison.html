@@ -150,14 +150,14 @@
 
             // Add external labels with improved positioning
             arcs.append("text")
-                .attr("transform", function(d) {
+                .attr("transform", function (d) {
                     const pos = outerArc.centroid(d);
                     const midAngle = Math.atan2(pos[1], pos[0]);
                     const x = Math.cos(midAngle) * (radius * 1.3);
                     const y = Math.sin(midAngle) * (radius * 1.3);
                     return `translate(${x}, ${y})`;
                 })
-                .attr("text-anchor", function(d) {
+                .attr("text-anchor", function (d) {
                     const pos = outerArc.centroid(d);
                     return (pos[0] >= 0) ? "start" : "end";
                 })
@@ -167,7 +167,7 @@
 
             // Add connecting lines with improved positioning
             arcs.append("polyline")
-                .attr("points", function(d) {
+                .attr("points", function (d) {
                     const pos = outerArc.centroid(d);
                     const midAngle = Math.atan2(pos[1], pos[0]);
                     const x1 = arcGenerator.centroid(d)[0];
@@ -197,7 +197,7 @@
 
             const xScale = d3.scaleBand()
                 .domain(hotelData.map(d => d.hotel))
-                .range([-barChartWidth/2, barChartWidth/2])
+                .range([-barChartWidth / 2, barChartWidth / 2])
                 .padding(0.3);
 
             const yScale = d3.scaleLinear()
@@ -207,7 +207,7 @@
             // Add grid lines first (behind bars)
             barChartGroup.append("g")
                 .attr("class", "grid")
-                .attr("transform", `translate(${-barChartWidth/2}, 0)`)
+                .attr("transform", `translate(${-barChartWidth / 2}, 0)`)
                 .call(d3.axisLeft(yScale)
                     .tickSize(-barChartWidth)
                     .tickFormat(""))
@@ -234,7 +234,7 @@
                 .enter()
                 .append("text")
                 .attr("class", "bar-label")
-                .attr("x", d => xScale(d.hotel) + xScale.bandwidth()/2)
+                .attr("x", d => xScale(d.hotel) + xScale.bandwidth() / 2)
                 .attr("y", d => yScale(d.count) - 10)
                 .attr("text-anchor", "middle")
                 .attr("font-size", "12px")
@@ -251,7 +251,7 @@
 
             // Y-axis with adjusted positioning
             barChartGroup.append("g")
-                .attr("transform", `translate(${-barChartWidth/2},0)`)
+                .attr("transform", `translate(${-barChartWidth / 2},0)`)
                 .call(d3.axisLeft(yScale)
                     .tickFormat(d => formatNumber(d)))
                 .selectAll("text")
@@ -268,8 +268,8 @@
             // Add Y-axis label
             barChartGroup.append("text")
                 .attr("transform", "rotate(-90)")
-                .attr("x", -innerHeight/2)
-                .attr("y", -barChartWidth/2 - 50)
+                .attr("x", -innerHeight / 2)
+                .attr("y", -barChartWidth / 2 - 50)
                 .attr("text-anchor", "middle")
                 .attr("font-size", "12px")
                 .text("Jumlah Pemesanan");
@@ -284,7 +284,7 @@
 
             // Ratio text with adjusted position
             const ratioText = `Rasio ${hotelData[0].hotel} : ${hotelData[1].hotel} = ${ratio.toFixed(1)} : 1`;
-            
+
             const ratioTextElem = svg.append("text")
                 .attr("x", width / 2)
                 .attr("y", height - 30)
@@ -294,7 +294,7 @@
                 .text(ratioText);
 
             const ratioBox = ratioTextElem.node().getBBox();
-            
+
             // Add background box for ratio text
             svg.insert("rect", "text")
                 .attr("x", ratioBox.x - 10)
