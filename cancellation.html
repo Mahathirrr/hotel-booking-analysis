@@ -119,27 +119,7 @@
                 .range([0, innerHeight])
                 .padding(0.3);
 
-            g.append("g")
-                .attr("class", "x-axis")
-                .attr("transform", `translate(0,${innerHeight})`)
-                .call(d3.axisBottom(xScale).ticks(5).tickFormat(d => d + "%"))
-                .call(g => g.select(".domain").remove());
-
-            g.append("text")
-                .attr("class", "x-axis-label")
-                .attr("x", innerWidth / 2)
-                .attr("y", innerHeight + 40)
-                .attr("text-anchor", "middle")
-                .style("font-size", "12px")
-                .style("fill", "#666")
-                .text("Persentase Pembatalan (%)");
-
-            g.append("g")
-                .attr("class", "y-axis")
-                .call(d3.axisLeft(yScale))
-                .call(g => g.select(".domain").remove());
-
-            // Add gridlines
+            // Add gridlines first (behind the bars)
             g.append("g")
                 .attr("class", "grid")
                 .call(d3.axisBottom(xScale)
@@ -147,11 +127,12 @@
                     .tickSize(-innerHeight)
                     .tickFormat("")
                 )
-                .call(g => g.select(".domain").remove())
                 .style("stroke", "#ddd")
                 .style("stroke-width", "1px")
-                .style("stroke-opacity", "1");
+                .style("stroke-opacity", "1")
+                .call(g => g.select(".domain").remove());
 
+            // Add bars
             const bars = g.selectAll(".bar")
                 .data(data)
                 .enter()
@@ -165,6 +146,42 @@
                 .attr("stroke", "white")
                 .attr("stroke-width", "1px");
 
+            // Add x-axis on top of bars
+            g.append("g")
+                .attr("class", "x-axis")
+                .attr("transform", `translate(0,${innerHeight})`)
+                .call(d3.axisBottom(xScale).ticks(5).tickFormat(d => d + "%"))
+                .style("font-size", "12px")
+                .style("color", "#666");
+
+            // Make sure domain line is visible
+            g.select(".x-axis .domain")
+                .style("stroke", "#666")
+                .style("stroke-width", "1px");
+
+            // Add x-axis label
+            g.append("text")
+                .attr("class", "x-axis-label")
+                .attr("x", innerWidth / 2)
+                .attr("y", innerHeight + 40)
+                .attr("text-anchor", "middle")
+                .style("font-size", "12px")
+                .style("fill", "#666")
+                .text("Persentase Pembatalan (%)");
+
+            // Add y-axis
+            g.append("g")
+                .attr("class", "y-axis")
+                .call(d3.axisLeft(yScale))
+                .style("font-size", "12px")
+                .style("color", "#666");
+
+            // Make sure domain line is visible
+            g.select(".y-axis .domain")
+                .style("stroke", "#666")
+                .style("stroke-width", "1px");
+
+            // Add bar labels
             g.selectAll(".bar-label")
                 .data(data)
                 .enter()
@@ -176,17 +193,9 @@
                 .style("font-size", "12px")
                 .style("fill", "#333")
                 .text(d => `${d.value.toFixed(1)}% (${formatNumber(d.count)})`);
-
-            g.select(".x-axis")
-                .style("font-size", "12px")
-                .style("color", "#666");
-
-            g.select(".y-axis")
-                .style("font-size", "12px")
-                .style("color", "#666");
         }
 
-        // Function to create pie chart
+        // Modifikasi fungsi createPieChart untuk menggeser posisi label
         function createPieChart(containerId, data) {
             const container = document.getElementById(containerId);
             const width = container.clientWidth;
@@ -228,11 +237,26 @@
                 .attr("transform", d => {
                     const pos = arc.centroid(d);
                     const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
-                    const x = Math.cos(midAngle) * (radius + 20);
-                    const y = Math.sin(midAngle) * (radius + 20);
+                    let x = Math.cos(midAngle) * (radius + 20);
+                    let y = Math.sin(midAngle) * (radius + 20);
+
+                    // Tambahkan offset berdasarkan label
+                    // Jika "Tidak Dibatalkan", geser ke kanan
+                    if (d.data.label === "Tidak Dibatalkan") {
+                        x += 85; // Geser 15px ke kanan
+                    }
+                    // Jika "Dibatalkan", geser ke kiri
+                    else if (d.data.label === "Dibatalkan") {
+                        x -= 85; // Geser 15px ke kiri
+                    }
+
                     return `translate(${x},${y})`;
                 })
                 .attr("dy", ".35em")
+                .attr("text-anchor", d => {
+                    const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
+                    return midAngle < Math.PI ? "start" : "end";
+                })
                 .style("font-size", "14px")
                 .style("font-weight", "bold")
                 .style("fill", "#333")
@@ -249,16 +273,21 @@
                 const cancellationCounts = d3.rollup(
                     data,
                     v => v.length,
-                    d => +d.is_canceled
+                    d => d.is_canceled
                 );
 
                 const cancellationTotal = Array.from(cancellationCounts.values()).reduce((a, b) => a + b, 0);
-                const cancellationPercentages = Array.from(cancellationCounts.entries()).map(([status, count]) => ({
-                    label: status === "0" ? "Tidak Dibatalkan" : "Dibatalkan",
-                    value: (count / cancellationTotal) * 100,
-                    count: count
-                }));
+                const cancellationPercentages = Array.from(cancellationCounts.entries()).map(([status, count]) => {
+                    // Ensure status is treated as a string and properly mapped
+                    const statusStr = String(status);
+                    return {
+                        label: statusStr === "0" ? "Tidak Dibatalkan" : "Dibatalkan",
+                        value: (count / cancellationTotal) * 100,
+                        count: count
+                    };
+                });
 
+                // Sort to ensure "Tidak Dibatalkan" comes first (for consistent color mapping)
                 cancellationPercentages.sort((a, b) => {
                     if (a.label === "Tidak Dibatalkan") return -1;
                     if (b.label === "Tidak Dibatalkan") return 1;
@@ -269,7 +298,7 @@
                     data,
                     v => ({
                         total: v.length,
-                        canceled: v.filter(d => +d.is_canceled === 1).length
+                        canceled: v.filter(d => d.is_canceled === "1").length
                     }),
                     d => d.hotel
                 );
@@ -286,7 +315,7 @@
                     data,
                     v => ({
                         total: v.length,
-                        canceled: v.filter(d => +d.is_canceled === 1).length
+                        canceled: v.filter(d => d.is_canceled === "1").length
                     }),
                     d => d.lead_time_group
                 );
@@ -303,7 +332,7 @@
                     data,
                     v => ({
                         total: v.length,
-                        canceled: v.filter(d => +d.is_canceled === 1).length
+                        canceled: v.filter(d => d.is_canceled === "1").length
                     }),
                     d => d.deposit_type
                 );
@@ -348,42 +377,17 @@
 
                 const otherDeposits = depositTypeData
                     .filter(d => d.category !== highestDepositType.category)
-                    .map(d => `'${d.category}' (${d.value.toFixed(1)}%)`)
-                    .join(', ');
+                    .map(d => `${d.category}: ${d.value.toFixed(1)}%`)
+                    .join(", ");
 
                 document.getElementById('other-deposits').textContent = otherDeposits;
-
-                const leadTimeMapping = {
-                    '0-7 hari': '0-7 hari',
-                    '8-30 hari': '8-30 hari',
-                    '31-90 hari': '31-90 hari',
-                    '91-180 hari': '91-180 hari',
-                    '181-365 hari': '181-365 hari',
-                    '>365 hari': '>365 hari'
-                };
-
-                leadTimeData = leadTimeData.map(d => ({
-                    ...d,
-                    category: leadTimeMapping[d.category] || d.category
-                }));
-
-                const depositMapping = {
-                    'No Deposit': 'No Deposit',
-                    'Non Refund': 'Non Refund',
-                    'Refundable': 'Refundable'
-                };
-
-                depositTypeData = depositTypeData.map(d => ({
-                    ...d,
-                    category: depositMapping[d.category] || d.category
-                }));
-            }).catch(error => {
-                console.error("Error loading or processing data:", error);
+            })
+            .catch(error => {
+                console.error("Error loading data:", error);
                 document.getElementById('loading').innerHTML = `
-                    <div class="p-4 bg-red-100 text-red-700 rounded">
-                        <p>Error: Tidak dapat memuat data. Pastikan file CSV tersedia di server.</p>
-                        <p>Detail: ${error.message}</p>
-                    </div>`;
+                    <p class="text-red-500">Error loading data: ${error.message}</p>
+                    <p class="text-sm">Please make sure the data file is available.</p>
+                `;
             });
     </script>
 </body>
