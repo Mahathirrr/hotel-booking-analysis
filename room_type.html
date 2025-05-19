@@ -145,10 +145,6 @@
                 <li>Rasio pemesanan tipe kamar A dibandingkan tipe kamar D menunjukkan dominasi preferensi tipe kamar A.
                 </li>
                 <li>12.3% tamu mendapatkan tipe kamar yang berbeda dari yang mereka pesan.</li>
-                <li>Dari tamu yang mendapatkan tipe kamar berbeda, 4.3% mendapatkan upgrade dan 95.7% mendapatkan
-                    downgrade.</li>
-                <li>Secara keseluruhan, 0.5% dari semua tamu mendapatkan upgrade, sedangkan 11.8% mendapatkan downgrade.
-                </li>
                 <li>Dominasi tipe kamar A menunjukkan preferensi tamu terhadap tipe kamar tersebut, yang mungkin
                     menawarkan nilai terbaik dari segi harga dan fasilitas.</li>
             </ol>
@@ -253,38 +249,6 @@
                 d => d.room_type_match === "1" || d.room_type_match === "true"
             );
 
-            // Hitung upgrade vs downgrade
-            let upgrades = 0;
-            let downgrades = 0;
-
-            data.forEach(d => {
-                if ((d.room_type_match === "0" || d.room_type_match === "false") &&
-                    d.assigned_room_type && d.reserved_room_type) {
-
-                    if (d.room_type_upgrade === "1" || d.room_type_upgrade === "true") {
-                        upgrades++;
-                    } else if (d.room_type_downgrade === "1" || d.room_type_downgrade === "true") {
-                        downgrades++;
-                    }
-                }
-            });
-
-            // Jika data upgrade/downgrade tidak tersedia, coba hitung dari room type
-            if (upgrades === 0 && downgrades === 0) {
-                data.forEach(d => {
-                    if ((d.room_type_match === "0" || d.room_type_match === "false") &&
-                        d.assigned_room_type && d.reserved_room_type) {
-
-                        const diff = d.assigned_room_type.charCodeAt(0) - d.reserved_room_type.charCodeAt(0);
-                        if (diff < 0) {
-                            upgrades++;
-                        } else if (diff > 0) {
-                            downgrades++;
-                        }
-                    }
-                });
-            }
-
             // Konversi ke array untuk pie chart 1
             const roomMatchData = [
                 { key: true, value: roomMatchCounts.get(true) || 0, label: "Sesuai" },
@@ -297,18 +261,6 @@
                 d.percentage = (d.value / totalRoomMatches) * 100;
             });
 
-            // Data untuk pie chart 2
-            const upgradeDowngradeData = [
-                { key: "Upgrade", value: upgrades },
-                { key: "Downgrade", value: downgrades }
-            ];
-
-            // Hitung persentase
-            const totalChanges = upgrades + downgrades;
-            upgradeDowngradeData.forEach(d => {
-                d.percentage = totalChanges > 0 ? (d.value / totalChanges) * 100 : 0;
-            });
-
             // Membuat container untuk ketiga chart
             const container = d3.select("#visualization");
 
@@ -317,9 +269,6 @@
                 .attr("class", "chart-container");
 
             const pieChart1Container = container.append("div")
-                .attr("class", "chart-container");
-
-            const pieChart2Container = container.append("div")
                 .attr("class", "chart-container");
 
             try {
