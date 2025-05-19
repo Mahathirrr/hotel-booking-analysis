@@ -204,6 +204,20 @@
                 const colorScale = d3.scaleSequential(d3.interpolateViridis)
                     .domain([0, data.length - 1]);
 
+                // Add grid lines - moved before bars
+                g.append("g")
+                    .attr("class", "grid")
+                    .attr("transform", `translate(0,0)`)
+                    .style("z-index", "-1")
+                    .call(d3.axisBottom(xScale)
+                        .tickSize(innerHeight)
+                        .tickFormat("")
+                    )
+                    .selectAll("line")
+                    .style("stroke", "#e0e0e0")
+                    .style("stroke-opacity", 0.2)
+                    .style("stroke-dasharray", "2,2");
+
                 // Add bars
                 g.selectAll(".bar")
                     .data(data)
@@ -225,11 +239,11 @@
                     .append("text")
                     .attr("class", "value-label")
                     .attr("y", d => yScale(d.key) + yScale.bandwidth() / 2)
-                    .attr("x", d => xScale(d.value) + 5)
+                    .attr("x", d => xScale(d.value) + 25)
                     .attr("dy", ".35em")
                     .attr("text-anchor", "start")
                     .style("fill", "black")
-                    .style("font-size", "9px")
+                    .style("font-size", "11px")
                     .text(d => formatNumber(d.value));
 
                 // Add axes
@@ -246,24 +260,13 @@
                     .selectAll("text")
                     .style("font-size", "10px");
 
-                // Add grid lines
-                g.append("g")
-                    .attr("class", "grid")
-                    .call(d3.axisBottom(xScale)
-                        .tickSize(innerHeight)
-                        .tickFormat("")
-                    )
-                    .selectAll("line")
-                    .style("stroke", "#e0e0e0")
-                    .style("stroke-opacity", 0.3);
-
                 // Add chart title
                 svg.append("text")
                     .attr("class", "chart-title")
                     .attr("x", width / 2)
                     .attr("y", 30)
                     .attr("text-anchor", "middle")
-                    .style("font-size", "14px")
+                    .style("font-size", "20px")
                     .style("font-weight", "bold")
                     .text("Jumlah Pemesanan berdasarkan Segmen Pasar");
 
@@ -271,16 +274,18 @@
                 svg.append("text")
                     .attr("x", width / 2)
                     .attr("y", height - 15)
+                    .style("font-weight", "bold")
                     .attr("text-anchor", "middle")
-                    .style("font-size", "12px")
+                    .style("font-size", "13px")
                     .text("Jumlah Pemesanan");
 
                 svg.append("text")
                     .attr("transform", "rotate(-90)")
                     .attr("x", -height / 2)
-                    .attr("y", 15)
+                    .attr("y", 120)
                     .attr("text-anchor", "middle")
-                    .style("font-size", "12px")
+                    .style("font-weight", "bold")
+                    .style("font-size", "13px")
                     .text("Segmen Pasar");
             }
 
@@ -303,6 +308,20 @@
                     .domain(data.map(d => d.segment))
                     .range([0, innerHeight])
                     .padding(0.1);
+
+                // Add grid lines first
+                g.append("g")
+                    .attr("class", "grid")
+                    .attr("transform", `translate(0,0)`)
+                    .style("z-index", "-1")
+                    .call(d3.axisBottom(xScale)
+                        .tickSize(innerHeight)
+                        .tickFormat("")
+                    )
+                    .selectAll("line")
+                    .style("stroke", "#e0e0e0")
+                    .style("stroke-opacity", 0.2)
+                    .style("stroke-dasharray", "2,2");
 
                 // Add city hotel bars
                 g.selectAll(".bar-city")
@@ -344,7 +363,7 @@
                     .attr("dy", ".35em")
                     .attr("text-anchor", "middle")
                     .style("fill", "white")
-                    .style("font-size", "10px")
+                    .style("font-size", "11px")  // Increased from 10px
                     .text(d => `${d.cityPct.toFixed(1)}%`);
 
                 // Add percentage labels for Resort Hotel (if enough space)
@@ -359,7 +378,7 @@
                     .attr("dy", ".35em")
                     .attr("text-anchor", "middle")
                     .style("fill", "white")
-                    .style("font-size", "10px")
+                    .style("font-size", "11px")  // Increased from 10px
                     .text(d => `${d.resortPct.toFixed(1)}%`);
 
                 // Add axes
@@ -376,24 +395,13 @@
                     .selectAll("text")
                     .style("font-size", "10px");
 
-                // Add grid lines
-                g.append("g")
-                    .attr("class", "grid")
-                    .call(d3.axisBottom(xScale)
-                        .tickSize(innerHeight)
-                        .tickFormat("")
-                    )
-                    .selectAll("line")
-                    .style("stroke", "#e0e0e0")
-                    .style("stroke-opacity", 0.3);
-
                 // Add chart title
                 svg.append("text")
                     .attr("class", "chart-title")
                     .attr("x", width / 2)
                     .attr("y", 30)
                     .attr("text-anchor", "middle")
-                    .style("font-size", "14px")
+                    .style("font-size", "20px")
                     .style("font-weight", "bold")
                     .text("Distribusi Jenis Hotel berdasarkan Segmen Pasar");
 
@@ -402,15 +410,17 @@
                     .attr("x", width / 2)
                     .attr("y", height - 15)
                     .attr("text-anchor", "middle")
-                    .style("font-size", "12px")
+                    .style("font-size", "13px")
+                    .style("font-weight", "bold")
                     .text("Persentase (%)");
 
                 svg.append("text")
                     .attr("transform", "rotate(-90)")
                     .attr("x", -height / 2)
-                    .attr("y", 15)
+                    .attr("y", 120)
                     .attr("text-anchor", "middle")
-                    .style("font-size", "12px")
+                    .style("font-size", "13px")
+                    .style("font-weight", "bold")
                     .text("Segmen Pasar");
 
                 // Add legend - improved positioning to avoid overlap
