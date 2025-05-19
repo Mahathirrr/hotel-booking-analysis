@@ -266,7 +266,7 @@
                     .attr("x", width / 2)
                     .attr("y", 30)
                     .attr("text-anchor", "middle")
-                    .style("font-size", "14px")
+                    .style("font-size", "20px")
                     .style("font-weight", "bold")
                     .text("Jumlah Pemesanan berdasarkan Segmen Pasar");
 
@@ -274,16 +274,18 @@
                 svg.append("text")
                     .attr("x", width / 2)
                     .attr("y", height - 15)
+                    .style("font-weight", "bold")
                     .attr("text-anchor", "middle")
-                    .style("font-size", "12px")
+                    .style("font-size", "13px")
                     .text("Jumlah Pemesanan");
 
                 svg.append("text")
                     .attr("transform", "rotate(-90)")
                     .attr("x", -height / 2)
-                    .attr("y", 15)
+                    .attr("y", 120)
                     .attr("text-anchor", "middle")
-                    .style("font-size", "12px")
+                    .style("font-weight", "bold")
+                    .style("font-size", "13px")
                     .text("Segmen Pasar");
             }
 
@@ -399,7 +401,7 @@
                     .attr("x", width / 2)
                     .attr("y", 30)
                     .attr("text-anchor", "middle")
-                    .style("font-size", "14px")
+                    .style("font-size", "20px")
                     .style("font-weight", "bold")
                     .text("Distribusi Jenis Hotel berdasarkan Segmen Pasar");
 
@@ -408,15 +410,17 @@
                     .attr("x", width / 2)
                     .attr("y", height - 15)
                     .attr("text-anchor", "middle")
-                    .style("font-size", "12px")
+                    .style("font-size", "13px")
+                    .style("font-weight", "bold")
                     .text("Persentase (%)");
 
                 svg.append("text")
                     .attr("transform", "rotate(-90)")
                     .attr("x", -height / 2)
-                    .attr("y", 15)
+                    .attr("y", 120)
                     .attr("text-anchor", "middle")
-                    .style("font-size", "12px")
+                    .style("font-size", "13px")
+                    .style("font-weight", "bold")
                     .text("Segmen Pasar");
 
                 // Add legend - improved positioning to avoid overlap
